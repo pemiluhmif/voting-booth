@@ -1,0 +1,23 @@
+{
+  "name": "voting-booth",
+  "version": "1.0.0",
+  "description": "Pemilu HMIF 2019 voting booth",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pemiluhmif/voting-booth.git"
+  },
+  "author": "IT Pemilu HMIF 2019",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pemiluhmif/voting-booth/issues"
+  },
+  "homepage": "https://github.com/pemiluhmif/voting-booth#readme",
+  "dependencies": {
+    "electron": "^3.0.10",
+    "uuid4": "^1.1.4"
+  }
+}
