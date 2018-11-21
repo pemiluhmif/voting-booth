@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/pemiluhmif/voting-booth#readme",
   "dependencies": {
+    "amqplib": "^0.5.2",
     "electron": "^3.0.10",
     "uuid4": "^1.1.4"
   }
