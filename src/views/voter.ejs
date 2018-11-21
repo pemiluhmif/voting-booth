@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <% include partials/head %>
+    <body>
+        <div class="container">
+            <div style="text-align: center">
+                <h1 class="title" style="margin-bottom: 30px; padding-top: 3vh">Klik <%- data.name %> Pilihanmu!</h1>
+            </div>
+            <div class="columns" style="justify-content:center">
+                <% data.candidates.forEach(name => { %>
+                    <%- include('vote/card', {name}); %>
+                <% }) %>
+            </div>
+        </div>
+        <% include partials/footer %>
+    </body>
+    <script>
+        let choose = (modalId) => {
+            document.querySelector(`#${modalId}`).style.display = 'block';
+        }
+        let closeModal = (modalId) => {
+            document.querySelector(`#${modalId}`).style.display = 'none';
+        }
+    </script>
+</html>

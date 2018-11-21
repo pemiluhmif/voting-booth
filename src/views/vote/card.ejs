@@ -1,0 +1,25 @@
+<div class="card profile" id="card-<%- name.nim %>" onclick="choose('notif-<%- name.nim %>')">
+    <div class="card-image">
+        <figure class="image is-4by5">
+            <img src=<%- name.photo %> alt="nama">
+        </figure>
+    </div>
+    <div class="card-content">
+        <p class="title is-4"><%- name.name %></p>
+        <p class="subtitle is-5"><%- name.nim %></p>
+    </div>
+</div>
+
+<div class="confirm-choose" id="notif-<%- name.nim %>">
+    <div class="notification">
+        <p class="title is-4">Sudah yakin memilih <%- name.name %>?</p>
+        <div class="level">
+            <div class="level-item">
+                <button class="button is-link">Ya, saya yakin</button>
+            </div>
+            <div class="level-item">
+                <button class="button is-danger" onclick="closeModal('notif-<%- name.nim %>')">Tidak, ganti pilihan</button>
+            </div>
+        </div>
+    </div>
+</div>

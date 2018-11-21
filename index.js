@@ -17,6 +17,7 @@ app.on('ready', function() {
         height: 600,
         resizable: true
     })
+    // win.setMenu(null);
     win.loadURL('http://localhost:7000/');
     win.focus();
 });
