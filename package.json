@@ -1,5 +1,5 @@
 {
-  "name": "pemilu-client",
+  "name": "voting-booth",
   "version": "1.0.0",
   "description": "Pemilu HMIF 2019 voting booth",
   "main": "index.js",
