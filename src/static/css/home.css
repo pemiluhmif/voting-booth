@@ -1,0 +1,25 @@
+#home {
+    margin-top: 12vh;
+}
+
+#home-logo {
+    width: 40vh;
+    height: auto;
+}
+
+#home-btn {
+    width: 100%;
+    margin-top: 10px;
+    color: white;
+    transition: 0.2s;
+    background-color: rgb(19, 179, 228);
+}
+#home-btn:hover {
+    background-color: rgb(0, 145, 189);
+}
+
+.copyright {
+    margin-top: 10vh;
+    font-size: 0.8rem;
+    color: rgb(156, 156, 156);
+}
