@@ -1,8 +1,12 @@
 const { app, BrowserWindow } = require('electron')
+const Messaging = require('./messaging');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let win
+let win;
+
+let RMQ_URL = "XXX";
+let NODE_ID = "TPS01";
 
 function createWindow () {
     // Create the browser window.
@@ -20,7 +24,9 @@ function createWindow () {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
-    })
+    });
+
+    enableNode(NODE_ID, "", "", RMQ_URL);
 }
 
 // This method will be called when Electron has finished
@@ -44,6 +50,24 @@ app.on('activate', () => {
         createWindow()
     }
 })
+
+/**
+ * TODO Enable node (invoked after loading Authorization Mainfest)
+ */
+function enableNode(nodeId, originHash, machineKey, amqpUrl) {
+    NODE_ID = nodeId;
+
+    // Connect to broker
+    Messaging.init(nodeId, Messaging.NODE_TYPE_VOTING_BOOTH);
+    Messaging.connect(amqpUrl, function() {
+        Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
+            alert("Vote request: " + msg.voter_name + " (" + msg.voter_nim + ")");
+            Messaging.sendToQueue(msg.reply, JSON.stringify({node_id: NODE_ID, request_id: msg.request_id}));
+        });
+    });
+
+    Database.authorize(machineKey);
+}
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
