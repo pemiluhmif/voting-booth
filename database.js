@@ -5,14 +5,14 @@
  * @author Joshua C. Randiny
  */
 
-const sqlite3 = require('sqlite3');
+const sqlite3 = require('better-sqlite3');
 const fs = require('fs');
+const crypto = require('crypto');
 
 var db = null;
 
 var nodeId = null;
 var machineKey = null;
-var RSAkey = null;
 var originHash = null;
 
 /**
@@ -22,75 +22,63 @@ var originHash = null;
  * @param cbfunc callback function when done
  */
 exports.init = function(dbUrl,cbfunc) {
-    db = new sqlite3.Database(dbUrl,(err)=>{
-        if(err){
-            console.error(err.message);
-            cbfunc('loadDbDone',false,err.message);
-        }else{
-            console.log("Sukses");
-            cbfunc('loadDbDone',true,'');
-        }
-    });
-
-
+    try {
+        db = new sqlite3(dbUrl,{fileMustExist:true});
+        cbfunc('loadDbDone', true, '');
+    } catch (err) {
+        console.error(err.message);
+        cbfunc('loadDbDone',false,err.message);
+    }
 };
 
 exports.setupTable = function(cbfunc) {
-    if(initKey(cbfunc)){
-        initTable();
-    }
+    initTable();
 };
 
 exports.loadJSON = function(fileName){
     return fs.readFileSync(fileName);
 };
 
-function generateSig(data){
-    if(RSAkey!=null){
-        return RSAkey.sign(data);
-    }else{
-        console.error("Key not loaded");
-    }
-}
-
 function initTable(){
     console.log("Setting up table");
 
-    db.run(`CREATE TABLE IF NOT EXISTS vote_record (
+    db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
     	vote_id INTEGER NOT NULL,
         node_id TETX NOT NULL,
         previous_signature BLOB NOT NULL,
-        voted_candidate INTEGER NOT NULL,
+        voted_candidate TEXT NOT NULL,
         signature BLOB NOT NULL
     );
     `);
 
-    db.serialize(()=>{
-        db.run(`CREATE TABLE IF NOT EXISTS last_signature (
+    db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
         node_id TEXT NOT NULL,
         last_signature BLOB NOT NULL,
         last_signature_signature BLOB NOT NULL
         );
-        `);
+     `);
 
-        db.get("SELECT Count(*) FROM last_signature", (err, row) => {
-            var dbCount = 0;
-
-            if (err) {
-                console.error(err.message);
-            }else {
-                dbCount = row['Count(*)'];
-                if(dbCount==0){
-                    console.log("Empty last_signature, inserting origin")
-                    /* INSERT ORIGIN */
-                    db.run(`INSERT INTO
+    let row = db.prepare("SELECT Count(*) FROM last_signature").get();
+    let dbCount = row['Count(*)'];
+    if(dbCount==0){
+        console.log("Empty last_signature, inserting origin")
+        /* INSERT ORIGIN */
+        db.prepare(`INSERT INTO
                     last_signature(node_id,last_signature,last_signature_signature) 
-                    VALUES(?,?,?)`,[nodeId,originHash,generateSig(originHash)]);
-                }
-            }
-        });
-    });
+                    VALUES(?,?,?)`).run(nodeId,originHash,generateSig(originHash));
+    }
+
 }
+
+
+/**
+ * generate signature
+ * @param input data to hash
+ */
+function generateSig(input) {
+    let signer = crypto.createHmac('sha256', machineKey);
+    return signer.update(input).digest('hex');
+};
 
 /**
  * Close the database connection
@@ -106,89 +94,83 @@ exports.close = function() {
 exports.loadInitManifest = function(initDataRaw,cbfunc) {
     // TODO persists
     if(db!=null){
-        db.serialize(()=>{
-            db.run(`DROP TABLE IF EXISTS config;`);
-            db.run(`CREATE TABLE config (
-                "key" TEXT NOT NULL,
-                value TEXT NOT NULL
-            );`);
+        db.exec(`DROP TABLE IF EXISTS config;`);
+        db.exec(`CREATE TABLE config (
+            "key" TEXT NOT NULL,
+            value TEXT NOT NULL
+        );`);
 
-            db.run('DROP TABLE IF EXISTS voters');
-            db.run(`CREATE TABLE IF NOT EXISTS voters (
-                nim INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                last_queued TIMESTAMP,
-                voted INTEGER DEFAULT 0 NOT NULL,
-                last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-            );
-            `);
+        db.exec('DROP TABLE IF EXISTS voters');
+        db.exec(`CREATE TABLE IF NOT EXISTS voters (
+            nim INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            last_queued TIMESTAMP,
+            voted INTEGER DEFAULT 0 NOT NULL,
+            last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        );
+        `);
 
-            db.run('DROP TABLE IF EXISTS voting_types');
-            db.run(`CREATE TABLE IF NOT EXISTS voting_types (
-                type  TEXT NOT NULL,
-                title TEXT NOT NULL
-            );
-            `);
+        db.exec('DROP TABLE IF EXISTS voting_types');
+        db.exec(`CREATE TABLE IF NOT EXISTS voting_types (
+            type  TEXT NOT NULL,
+            title TEXT NOT NULL
+        );
+        `);
 
-            console.log("Trying to load JSON config");
-
+        console.log("Trying to load JSON config");
 
 
-            let initData = JSON.parse(initDataRaw);
 
-            console.log(initData);
+        let initData = JSON.parse(initDataRaw);
 
-            var stmt = db.prepare("INSERT INTO config VALUES (?,?)");
+        console.log(initData);
 
-            // Node id
-            nodeId = initData['node_id'];
-            stmt.run('node_id',nodeId);
+        var stmt = db.prepare("INSERT INTO config VALUES (?,?)");
 
-            // origin hash
-            originHash = initData['origin_hash'];
-            stmt.run('origin_hash',originHash);
+        // Node id
+        nodeId = initData['node_id'];
+        stmt.run('node_id',nodeId);
 
-            // voting name
-            stmt.run('voting_name',initData['voting_name']);
+        // origin hash
+        originHash = initData['origin_hash'];
+        stmt.run('origin_hash',originHash);
 
-            // background url
-            stmt.run('background_url',initData['background_url']);
+        // voting name
+        stmt.run('voting_name',initData['voting_name']);
 
-            // logo_url
-            stmt.run('logo_url',initData['logo_url']);
+        // background url
+        stmt.run('background_url',initData['background_url']);
 
-            // color
-            stmt.run('color',JSON.stringify(initData['color']));
+        // logo_url
+        stmt.run('logo_url',initData['logo_url']);
 
-
-            console.log("done config");
+        // color
+        stmt.run('color',JSON.stringify(initData['color']));
 
 
-            stmt = db.prepare("INSERT INTO voters (nim,name,last_queued) VALUES (?,?,null)");
+        console.log("done config");
 
-            for (var key in initData['voters']) {
-                let data = initData['voters'][key];
 
-                stmt.run(data['nim'],data['name']);
-            }
+        stmt = db.prepare("INSERT INTO voters (nim,name,last_queued) VALUES (?,?,null)");
 
-            console.log("done voters");
+        for (var key in initData['voters']) {
+            let data = initData['voters'][key];
 
-            stmt = db.prepare("INSERT INTO voting_types VALUES (?,?)");
+            stmt.run(data['nim'],data['name']);
+        }
 
-            for (var key in initData['voting_types']) {
-                let data = initData['voting_types'][key];
-                stmt.run(data['type'],data['title']);
-            }
+        console.log("done voters");
 
-            stmt.finalize();
+        stmt = db.prepare("INSERT INTO voting_types VALUES (?,?)");
 
-            console.log("done voting_types");
+        for (var key in initData['voting_types']) {
+            let data = initData['voting_types'][key];
+            stmt.run(data['type'], data['title']);
+        }
 
-            cbfunc('initJSONDone',true,'');
+        console.log("done voting_types");
 
-        });
-
+        cbfunc('initJSONDone',true,'');
     }else{
         cbfunc('initJSONDone',false,'Database not initialized');
     }
@@ -225,11 +207,36 @@ exports.authorize = function(machine_key) {
  * @param vote_records JSON of vote records
  */
 exports.performVoteDataUpdate = function(node_id, vote_records) {
-    /* TODO perform data update.
-     * Data coming in from this method belongs to an individual node, one at a time.
+    /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same vote_id exists, prioritize the data coming from the node of which the data is generated.
      */
 
+
+
+    let stmtCount = db.prepare("SELECT * FROM vote_record WHERE vote_id = ?");
+    let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
+    let stmtUpdate = db.prepare("UPDATE vote_record SET node_id = ?, previous_signature = ?, voted_candidate = ?, signature = ? WHERE vote_id = ?");
+
+    let transaction = db.transaction((dataInsert)=>{
+        let voteData = stmtCount.get(dataInsert['vote_id']);
+        if(voteData===undefined){
+            stmtInsert.run(dataInsert['vote_id'],
+                dataInsert['node_id'],
+                dataInsert['previous_signature'],
+                dataInsert['voted_candidate'],
+                dataInsert['signature']);
+        }else{
+            if(node_id === dataInsert['node_id']){
+                stmtUpdate.run(dataInsert['node_id'],
+                    dataInsert['previous_signature'],
+                    dataInsert['voted_candidate'],
+                    dataInsert['signature'],
+                    dataInsert['vote_id']);
+            }
+        }
+    });
+
+    transaction(vote_records);
 };
 
 /**
@@ -238,10 +245,38 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
  * @param person_records JSON of vote records
  */
 exports.performPersonDataUpdate = function(node_id, person_records) {
-    /* TODO perform data update.
-     * Data coming in from this method belongs to an individual node, one at a time.
+    /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same NIM exists, prioritize the most recent data
      */
 
+    console.log("update person");
+    let stmtCount = db.prepare("SELECT * FROM voters WHERE nim = ?");
+    let stmtInsert = db.prepare("INSERT INTO voters VALUES (?,?,?,?,?)");
+    let stmtUpdate = db.prepare("UPDATE voters SET name = ?, last_queued = ?, voted = ?, last_modified = ? WHERE nim = ?");
+
+    let transaction = db.transaction((dataInsert)=>{
+        let voteData = stmtCount.get(dataInsert['nim']);
+
+        if(voteData===undefined){
+            stmtInsert.run(dataInsert['nim'],
+                dataInsert['name'],
+                dataInsert['last_queued'],
+                dataInsert['voted'],
+                dataInsert['last_modified']);
+        }else{
+            let voteDate = new Date(voteData['last_modified'] );
+            let dataDate = new Date(dataInsert['last_modified']);
+            if(voteDate < dataDate){
+                console.log("in");
+                stmtUpdate.run(dataInsert['name'],
+                    dataInsert['last_queued'],
+                    dataInsert['voted'],
+                    dataInsert['last_modified'],
+                    dataInsert['nim']);
+            }
+        }
+    });
+
+    transaction(person_records);
 
 };
