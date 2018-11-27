@@ -1,7 +1,7 @@
 /**
  * Database layer
  *
- * @author Muhammad Aditya H.
+ * @author Muhammad Aditya Hilmy, NIM 18217025
  */
 
 var amqp = require('amqplib/callback_api');
@@ -16,7 +16,6 @@ const EX_HEARTBEAT = "heartbeat";
 const EX_VOTER_QUEUED = "voter_queued";
 const EX_VOTER_QUEUED_SHARED = "voter_queued_shared";
 const EX_VOTER_SERVED = "voter_served";
-const EX_VOTER_SERVED_REPLY = "voter_served_reply";
 const EX_VOTE_CASTED = "vote_casted";
 
 const EX_REQUEST_DATA_BROADCAST = "request_data_broadcast";
@@ -32,7 +31,6 @@ exports.EX_HEARTBEAT = EX_HEARTBEAT;
 exports.EX_VOTER_QUEUED = EX_VOTER_QUEUED;
 exports.EX_VOTER_QUEUED_SHARED = EX_VOTER_QUEUED_SHARED;
 exports.EX_VOTER_SERVED = EX_VOTER_SERVED;
-exports.EX_VOTER_SERVED_REPLY = EX_VOTER_SERVED_REPLY;
 exports.EX_VOTE_CASTED = EX_VOTE_CASTED;
 exports.EX_REQUEST_DATA_BROADCAST = EX_REQUEST_DATA_BROADCAST;
 exports.EX_VOTE_DATA_REPLY = EX_VOTE_DATA_REPLY;
@@ -56,7 +54,7 @@ exports.connect = function(url, callback) {
                 if(callback != null) callback();
 
                 // Publish node status
-                exports.publish(EX_NODE_UPDATED, JSON.stringify({'node_id': nodeId, 'node_type': nodeType, 'status': 'JOIN'}));
+                exports.publish(EX_NODE_UPDATED, '', JSON.stringify({'node_id': nodeId, 'node_type': nodeType, 'status': 'JOIN'}));
             });
 
             amqpConn = conn;
@@ -87,13 +85,12 @@ function assertExchanges(ch) {
 
     if(nodeType === NODE_TYPE_REGDESK) {
         ch.assertQueue(buildQueueName(EX_VOTER_SERVED), {durable: true, exclusive: false}, function (err, q) {
-            // No auto acknowledge, since voting can take a long time (machine wise)
             ch.consume(q.queue, function (msg) {
-                console.log(" [x] %s", msg.content.toString());
+                //console.log(" [x] %s", msg.content.toString());
                 let callback = listeners[EX_VOTER_SERVED];
                 if (callback !== undefined)
                     callback(msg, ch);
-            }, {noAck: false});
+            }, {noAck: true});
         });
     }
 
@@ -109,7 +106,7 @@ function assertExchanges(ch) {
     ch.assertQueue(buildQueueName(EX_VOTER_QUEUED), {durable: true, exclusive: false}, function (err, q) {
         ch.bindQueue(q.queue, EX_VOTER_QUEUED);
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_VOTER_QUEUED];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -122,7 +119,7 @@ function assertExchanges(ch) {
             ch.bindQueue(q.queue, EX_VOTER_QUEUED);
             // No auto acknowledge, since voting can take a long time (machine wise)
             ch.consume(q.queue, function(msg) {
-                console.log(" [x] %s", msg.content.toString());
+                //console.log(" [x] %s", msg.content.toString());
                 let callback = listeners[EX_VOTER_QUEUED_SHARED];
                 if(callback !== undefined)
                     callback(msg, ch);
@@ -141,7 +138,7 @@ function assertExchanges(ch) {
 
         // No auto acknowledge, since delivery is important
         ch.consume(q.queue, function (msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_VOTE_CASTED];
             if (callback !== undefined)
                 callback(msg, ch);
@@ -162,7 +159,7 @@ function assertNodeManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_NODE_UPDATED, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_NODE_UPDATED];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -173,7 +170,7 @@ function assertNodeManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_PING, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_PING];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -186,7 +183,7 @@ function assertNodeManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_HEARTBEAT, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_HEARTBEAT];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -201,7 +198,7 @@ function assertDataManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_REQUEST_DATA_BROADCAST, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_REQUEST_DATA_BROADCAST];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -214,7 +211,7 @@ function assertDataManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_VOTE_DATA_REPLY, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_VOTE_DATA_REPLY];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -227,7 +224,7 @@ function assertDataManagementExchanges(ch) {
         ch.bindQueue(q.queue, EX_PERSON_DATA_REPLY, '');
 
         ch.consume(q.queue, function(msg) {
-            console.log(" [x] %s", msg.content.toString());
+            //console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_PERSON_DATA_REPLY];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -244,14 +241,13 @@ exports.setMessageListener = function(queue, callback) {
 };
 
 
-exports.publish = function(queue, msg, callback) {
-    let queueName = (queue === EX_VOTER_QUEUED) ? EX_VOTER_QUEUED.toString() : buildQueueName(queue.toString());
+exports.publish = function(exchange, queue, msg, callback) {
     if(amqpCh !== undefined) {
-        amqpCh.sendToQueue(queueName, Buffer.from(msg), {}, function () {
+        amqpCh.publish(exchange, queue, Buffer.from(msg), {}, function () {
             if(callback !== undefined) callback();
         });
 
-        console.log(" [x] Sent to queue %s", queueName);
+        console.log(" [x] Sent to exchange %s", exchange);
     }
 };
 

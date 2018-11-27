@@ -2,7 +2,7 @@
   "name": "voting-booth",
   "version": "1.0.0",
   "description": "Pemilu HMIF 2019 voting booth",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",

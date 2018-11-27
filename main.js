@@ -5,8 +5,8 @@ const Messaging = require('./messaging');
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
 
-let RMQ_URL = "XXX";
-let NODE_ID = "TPS01";
+let RMQ_URL = "amqp://gxqzgwoj:hXDR_7ciQm93nouQGRC_YGLPbIYnFCid@mustang.rmq.cloudamqp.com/gxqzgwoj";
+let NODE_ID = "TPS02";
 
 function createWindow () {
     // Create the browser window.
@@ -61,12 +61,18 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     Messaging.init(nodeId, Messaging.NODE_TYPE_VOTING_BOOTH);
     Messaging.connect(amqpUrl, function() {
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
-            alert("Vote request: " + msg.voter_name + " (" + msg.voter_nim + ")");
-            Messaging.sendToQueue(msg.reply, JSON.stringify({node_id: NODE_ID, request_id: msg.request_id}));
+            try {
+                let data = JSON.parse(msg.content.toString());
+                console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
+                Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
+
+                // Acknowledge message WHEN VOTING IS COMPLETE
+                ch.ack(msg);
+            } catch (e) {
+                console.log(e);
+            }
         });
     });
-
-    Database.authorize(machineKey);
 }
 
 // In this file you can include the rest of your app's specific main process
