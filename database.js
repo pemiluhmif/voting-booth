@@ -14,6 +14,7 @@ var db = null;
 var nodeId = null;
 var machineKey = null;
 var originHash = null;
+var amqpUrl = null;
 
 /**
  * Initializes database object
@@ -81,13 +82,19 @@ exports.loadJSON = function(fileName){
 };
 
 /**
- * Get config from database
+ * Get config from database or memory
  * @param key key to retrieve
  */
 exports.getConfig = function (key) {
     if(db!=null){
-        let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
-        return stmt.get(key)['value'];
+        if(key==="amqp_url"){
+            return amqpUrl;
+        }else if(key==="machine_key"){
+            return machineKey;
+        }else{
+            let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
+            return stmt.get(key)['value'];
+        }
     }else{
         console.error("DB not loaded");
         return null;
@@ -211,7 +218,7 @@ exports.loadAuthorizationManifest= function(JSONdata,cbfunc){
         cbfunc('initAuthDone',false,`Node id doesn't match`);
     }else{
         machineKey = JSONcontent['machine_key'];
-        // TODO Set amqp url
+        amqpUrl = JSONcontent['amqp_url'];
         cbfunc('initAuthDone',true,'');
     }
 };
