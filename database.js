@@ -24,11 +24,11 @@ var amqpUrl = null;
  */
 exports.init = function(dbUrl,cbfunc) {
     try {
-        db = new sqlite3(dbUrl,{fileMustExist:true});
-        cbfunc('loadDbDone', true, '');
+        db = new sqlite3(dbUrl);
+        cbfunc('init', true, '');
     } catch (err) {
         console.error(err.message);
-        cbfunc('loadDbDone',false,err.message);
+        cbfunc('init',false,err.message);
     }
 };
 
@@ -41,8 +41,8 @@ exports.setupTable = function(cbfunc) {
 
     try {
         db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
-            vote_id INTEGER NOT NULL,
-            node_id TETX NOT NULL,
+            vote_id INTEGER NOT NULL PRIMARY KEY,
+            node_id TEXT NOT NULL,
             previous_signature BLOB NOT NULL,
             voted_candidate TEXT NOT NULL,
             signature BLOB NOT NULL
@@ -50,25 +50,25 @@ exports.setupTable = function(cbfunc) {
         `);
 
         db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
-            node_id TEXT NOT NULL,
+            node_id TEXT PRIMARY KEY NOT NULL,
             last_signature BLOB NOT NULL,
             last_signature_signature BLOB NOT NULL
             );
          `);
 
-        let row = db.prepare("SELECT Count(*) FROM last_signature").get();
+        let row = db.prepare("SELECT Count(*) FROM last_signature WHERE node_id = ?").get(nodeId);
         let dbCount = row['Count(*)'];
         if (dbCount == 0) {
             console.log("Empty last_signature, inserting origin")
-            /* INSERT ORIGIN */
+            // Inserting origin
             db.prepare(`INSERT INTO
                         last_signature(node_id,last_signature,last_signature_signature) 
                         VALUES(?,?,?)`).run(nodeId, originHash, generateSig(originHash));
         }
 
-        cbfunc("initTableDone",true,"");
+        cbfunc("setupTable",true,"");
     } catch (e) {
-        cbfunc("initTableDone",false,e.message);
+        cbfunc("setupTable",false,e.message);
     }
 };
 
@@ -93,13 +93,30 @@ exports.getConfig = function (key) {
             return machineKey;
         }else{
             let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
-            return stmt.get(key)['value'];
+            let data = stmt.get(key);
+            if(data===undefined){
+                return null;
+            }else {
+                return stmt.get(key)['value'];
+            }
         }
     }else{
         console.error("DB not loaded");
         return null;
     }
-}
+};
+
+exports.getLastSignature = function() {
+    if(db!=null && nodeId!=null){
+        let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
+        let data = stmt.get(key);
+        if(data===undefined){
+            return null;
+        }else {
+            return stmt.get(key)['value'];
+        }
+    }
+};
 
 
 /**
@@ -127,13 +144,13 @@ exports.loadInitManifest = function(initDataRaw,cbfunc) {
     if(db!=null){
         db.exec(`DROP TABLE IF EXISTS config;`);
         db.exec(`CREATE TABLE config (
-            "key" TEXT NOT NULL,
+            "key" TEXT NOT NULL PRIMARY KEY,
             value TEXT NOT NULL
         );`);
 
         db.exec('DROP TABLE IF EXISTS voters');
         db.exec(`CREATE TABLE IF NOT EXISTS voters (
-            nim INTEGER NOT NULL,
+            nim INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
             last_queued TIMESTAMP,
             voted INTEGER DEFAULT 0 NOT NULL,
@@ -143,7 +160,7 @@ exports.loadInitManifest = function(initDataRaw,cbfunc) {
 
         db.exec('DROP TABLE IF EXISTS voting_types');
         db.exec(`CREATE TABLE IF NOT EXISTS voting_types (
-            type  TEXT NOT NULL,
+            type  TEXT NOT NULL PRIMARY KEY,
             title TEXT NOT NULL
         );
         `);
@@ -201,25 +218,26 @@ exports.loadInitManifest = function(initDataRaw,cbfunc) {
 
         console.log("done voting_types");
 
-        cbfunc('initJSONDone',true,'');
+        cbfunc('loadInitManifest',true,'');
     }else{
-        cbfunc('initJSONDone',false,'Database not initialized');
+        cbfunc('loadInitManifest',false,'Database not initialized');
     }
 };
 
 /**
  * Load Authorization Manifest
  * @param JSONdata authorization manifest JSON object
+ * @param cbfunc callback function when done with parameter type, success, message
  */
 exports.loadAuthorizationManifest= function(JSONdata,cbfunc){
     let JSONcontent = JSON.parse(JSONdata);
     if(nodeId!=JSONcontent["node_id"]){
         console.error(`Node id doesn't match`);
-        cbfunc('initAuthDone',false,`Node id doesn't match`);
+        cbfunc('loadAuthorizationManifest',false,`Node id doesn't match`);
     }else{
         machineKey = JSONcontent['machine_key'];
         amqpUrl = JSONcontent['amqp_url'];
-        cbfunc('initAuthDone',true,'');
+        cbfunc('loadAuthorizationManifest',true,'');
     }
 };
 
@@ -236,8 +254,9 @@ exports.authorize = function(machine_key) {
  * Update vote data
  * @param node_id node ID the data coming from
  * @param vote_records JSON of vote records
+ * @param signature_records JSON of signature records
  */
-exports.performVoteDataUpdate = function(node_id, vote_records) {
+exports.performVoteDataUpdate = function(node_id, vote_records, signature_records) {
     /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same vote_id exists, prioritize the data coming from the node of which the data is generated.
      */
@@ -246,7 +265,18 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
     let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
     let stmtUpdate = db.prepare("UPDATE vote_record SET node_id = ?, previous_signature = ?, voted_candidate = ?, signature = ? WHERE vote_id = ?");
 
-    let transaction = db.transaction((dataInsert)=>{
+    let stmtUpdateSig = db.prepare(`INSERT OR REPLACE INTO last_signature (node_id, last_signature, last_signature_signature) VALUES (  ?, ?, ? );`);
+    // let stmtUpdateSig = db.prepare("UPDATE last_signature VALUES (?,?,?)");
+
+
+    db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
+            node_id TEXT NOT NULL,
+            last_signature BLOB NOT NULL,
+            last_signature_signature BLOB NOT NULL
+            );
+         `);
+
+    let transaction = db.transaction((dataInsert,sigInsert)=>{
         let voteData = stmtCount.get(dataInsert['vote_id']);
         if(voteData===undefined){
             stmtInsert.run(dataInsert['vote_id'],
@@ -254,6 +284,10 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
                 dataInsert['previous_signature'],
                 dataInsert['voted_candidate'],
                 dataInsert['signature']);
+            stmtUpdateSig.run(sigInsert['node_id'],
+                sigInsert['last_signature'],
+                sigInsert['signature']);
+
         }else{
             if(node_id === dataInsert['node_id']){
                 stmtUpdate.run(dataInsert['node_id'],
@@ -261,11 +295,14 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
                     dataInsert['voted_candidate'],
                     dataInsert['signature'],
                     dataInsert['vote_id']);
+                stmtUpdateSig.run(sigInsert['node_id'],
+                    sigInsert['last_signature'],
+                    sigInsert['signature']);
             }
         }
     });
 
-    transaction(vote_records);
+    transaction(vote_records,signature_records);
 };
 
 /**
