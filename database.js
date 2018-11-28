@@ -87,18 +87,38 @@ exports.loadJSON = function(fileName){
  */
 exports.getConfig = function (key) {
     if(db!=null){
-        if(key==="amqp_url"){
-            return amqpUrl;
-        }else if(key==="machine_key"){
-            return machineKey;
-        }else{
-            let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
-            let data = stmt.get(key);
-            if(data===undefined){
-                return null;
-            }else {
-                return stmt.get(key)['value'];
-            }
+        let stmt;
+        let data;
+
+        switch(key){
+            case "amqp_url":
+                return amqpUrl;
+            case "machine_key":
+                return machineKey;
+            case "candidates":
+                stmt  = db.prepare("SElECT * FROM candidates");
+                data = stmt.all();
+                if(data===undefined){
+                    return null;
+                }else {
+                    return data;
+                }
+            case "voting_types":
+                stmt  = db.prepare("SElECT * FROM voting_types");
+                data = stmt.all();
+                if(data===undefined){
+                    return null;
+                }else {
+                    return data;
+                }
+            default:
+                stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
+                data = stmt.get(key);
+                if(data===undefined){
+                    return null;
+                }else {
+                    return data['value'];
+                }
         }
     }else{
         console.error("DB not loaded");
@@ -165,6 +185,18 @@ exports.loadInitManifest = function(initDataRaw,cbfunc) {
         );
         `);
 
+
+        db.exec('DROP TABLE IF EXISTS candidates');
+        db.exec(`CREATE TABLE IF NOT EXISTS candidates (
+            candidate_no INTEGER NOT NULL,
+            voting_type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            NIM INTEGER NOT NULL,
+            image_file_path TEXT NOT NULL,
+            PRIMARY KEY (candidate_no, voting_type)
+        );
+        `);
+
         console.log("Trying to load JSON config");
 
 
@@ -217,6 +249,19 @@ exports.loadInitManifest = function(initDataRaw,cbfunc) {
         }
 
         console.log("done voting_types");
+
+        stmt = db.prepare("INSERT INTO candidates VALUES (?,?,?,?,?)");
+
+        for (var key in initData['candidates']) {
+            let data = initData['candidates'][key];
+            stmt.run(data['candidate_no'],
+                data['voting_type'],
+                data['name'],
+                data['nim'],
+                data['image_url']);
+        }
+
+        console.log("done candidates");
 
         cbfunc('loadInitManifest',true,'');
     }else{

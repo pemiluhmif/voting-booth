@@ -119,7 +119,7 @@ function assertExchanges(ch) {
             ch.bindQueue(q.queue, EX_VOTER_QUEUED);
             // No auto acknowledge, since voting can take a long time (machine wise)
             ch.consume(q.queue, function(msg) {
-                //console.log(" [x] %s", msg.content.toString());
+                // console.log(" [x] %s", msg.content.toString());
                 let callback = listeners[EX_VOTER_QUEUED_SHARED];
                 if(callback !== undefined)
                     callback(msg, ch);

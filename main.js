@@ -62,6 +62,7 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     Messaging.connect(amqpUrl, function() {
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
             try {
+                console.log(msg.content.toString())
                 let data = JSON.parse(msg.content.toString());
                 console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                 Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
