@@ -19,7 +19,7 @@ var originHash = null;
  * Initializes database object
  * Load SQLite database
  * @param dbUrl SQLite database URL
- * @param cbfunc callback function when done
+ * @param cbfunc callback function when done with parameter type, success, message
  */
 exports.init = function(dbUrl,cbfunc) {
     try {
@@ -31,43 +31,67 @@ exports.init = function(dbUrl,cbfunc) {
     }
 };
 
+/**
+ * Setup table for first time use
+ * @param cbfunc callback function when done with parameter type, success, message
+ */
 exports.setupTable = function(cbfunc) {
-    initTable();
+    console.log("Setting up table");
+
+    try {
+        db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
+            vote_id INTEGER NOT NULL,
+            node_id TETX NOT NULL,
+            previous_signature BLOB NOT NULL,
+            voted_candidate TEXT NOT NULL,
+            signature BLOB NOT NULL
+        );
+        `);
+
+        db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
+            node_id TEXT NOT NULL,
+            last_signature BLOB NOT NULL,
+            last_signature_signature BLOB NOT NULL
+            );
+         `);
+
+        let row = db.prepare("SELECT Count(*) FROM last_signature").get();
+        let dbCount = row['Count(*)'];
+        if (dbCount == 0) {
+            console.log("Empty last_signature, inserting origin")
+            /* INSERT ORIGIN */
+            db.prepare(`INSERT INTO
+                        last_signature(node_id,last_signature,last_signature_signature) 
+                        VALUES(?,?,?)`).run(nodeId, originHash, generateSig(originHash));
+        }
+
+        cbfunc("initTableDone",true,"");
+    } catch (e) {
+        cbfunc("initTableDone",false,e.message);
+    }
 };
 
+/**
+ * Load JSON file
+ * Note : Handle error on caller
+ * @param fileName filename to be loaded
+ */
 exports.loadJSON = function(fileName){
     return fs.readFileSync(fileName);
 };
 
-function initTable(){
-    console.log("Setting up table");
-
-    db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
-    	vote_id INTEGER NOT NULL,
-        node_id TETX NOT NULL,
-        previous_signature BLOB NOT NULL,
-        voted_candidate TEXT NOT NULL,
-        signature BLOB NOT NULL
-    );
-    `);
-
-    db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
-        node_id TEXT NOT NULL,
-        last_signature BLOB NOT NULL,
-        last_signature_signature BLOB NOT NULL
-        );
-     `);
-
-    let row = db.prepare("SELECT Count(*) FROM last_signature").get();
-    let dbCount = row['Count(*)'];
-    if(dbCount==0){
-        console.log("Empty last_signature, inserting origin")
-        /* INSERT ORIGIN */
-        db.prepare(`INSERT INTO
-                    last_signature(node_id,last_signature,last_signature_signature) 
-                    VALUES(?,?,?)`).run(nodeId,originHash,generateSig(originHash));
+/**
+ * Get config from database
+ * @param key key to retrieve
+ */
+exports.getConfig = function (key) {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
+        return stmt.get(key)['value'];
+    }else{
+        console.error("DB not loaded");
+        return null;
     }
-
 }
 
 
@@ -210,8 +234,6 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
     /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same vote_id exists, prioritize the data coming from the node of which the data is generated.
      */
-
-
 
     let stmtCount = db.prepare("SELECT * FROM vote_record WHERE vote_id = ?");
     let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
