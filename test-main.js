@@ -58,13 +58,28 @@ app.on('ready', ()=>{
             try {
                 Database.loadInitManifest(Database.loadJSON(argv.config));
                 Database.loadAuthorizationManifest(Database.loadJSON(argv.auth));
-                createWindow();
+                Database.setupTable();
             } catch (e) {
                 dialog.showErrorBox("Error on JSON load",e.message);
+                console.error(e.message);
+                process.exit(1);
             }
-        }else{
-            createWindow();
         }
+
+        // Setup node
+        try{
+            enableNode(Database.getConfig("node_id"),
+                Database.getConfig("origin_hash"),
+                Database.getConfig("machine_key"),
+                Database.getConfig("amqp_url"));
+        }catch (e) {
+            dialog.showErrorBox("Error on node communication setup",e.message);
+            console.error(e.message);
+            process.exit(1);
+        }
+
+        createWindow();
+
     }else{
         dialog.showErrorBox("Error on init",status["msg"]);
     }
@@ -96,7 +111,6 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     Messaging.connect(amqpUrl, function() {
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
             try {
-                console.log(msg.content.toString())
                 let data = JSON.parse(msg.content.toString());
                 console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                 Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
