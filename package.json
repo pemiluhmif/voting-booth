@@ -2,7 +2,7 @@
   "name": "voting-booth",
   "version": "1.0.0",
   "description": "Pemilu HMIF 2019 voting booth",
-  "main": "main.js",
+  "main": "test-main.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -52,12 +52,13 @@
   },
   "dependencies": {
     "amqplib": "^0.5.2",
-    "uuid4": "^1.1.4",
     "axios": "^0.18.0",
+    "better-sqlite3": "^5.0.1",
     "bulma": "^0.7.2",
     "ejs": "^2.6.1",
     "electron-reload": "^1.3.0",
     "express": "^4.16.4",
-    "better-sqlite3": "^5.0.1"
+    "uuid4": "^1.1.4",
+    "yargs": "^12.0.5"
   }
 }

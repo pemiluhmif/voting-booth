@@ -168,7 +168,6 @@ exports.close = function() {
  * @param initData initialization manifest JSON object
  */
 exports.loadInitManifest = function(initDataRaw) {
-    // TODO persists
     if(db!=null){
         db.exec(`DROP TABLE IF EXISTS config;`);
         db.exec(`CREATE TABLE config (
@@ -206,8 +205,6 @@ exports.loadInitManifest = function(initDataRaw) {
         `);
 
         console.log("Trying to load JSON config");
-
-
 
         let initData = JSON.parse(initDataRaw);
 

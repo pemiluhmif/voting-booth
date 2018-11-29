@@ -23,19 +23,21 @@
     },
     {
       "name": "Toni",
-      "nim": "13517000"
+      "nim": "18217999"
     }
   ],
   "candidates": [
     {
       "candidate_no": "1",
       "name": "Budi",
+      "nim":13516999,
       "image_url": "IMAGE_URL1",
       "voting_type": "kahim"
     },
     {
       "candidate_no": "2",
       "name": "Badu",
+      "nim":18217999,
       "image_url": "IMAGE_URL2",
       "voting_type": "kahim"
     }
