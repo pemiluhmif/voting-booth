@@ -7,10 +7,11 @@ const yargs = require('yargs');
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
 
-let serv = require('./src/app');
+let serv = null;
 
 function createWindow () {
     // Create the browser window.
+    serv = require('./src/app');
 
     win = new BrowserWindow({
         width: 1024,
