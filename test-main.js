@@ -55,8 +55,16 @@ app.on('ready', ()=>{
         // Initial config
         if(argv.initial){
             try {
-                Database.loadInitManifest(Database.loadJSON(argv.config));
-                Database.loadAuthorizationManifest(Database.loadJSON(argv.auth));
+                let ret = Database.loadInitManifest(Database.loadJSON(argv.config));
+                if(ret['status']===false){
+                    dialog.showErrorBox("Error on JSON (manifest) load",ret['msg']);
+                    process.exit(1);
+                }
+                ret = Database.loadAuthorizationManifest(Database.loadJSON(argv.auth));
+                if(ret['status']===false){
+                    dialog.showErrorBox("Error on JSON (auth) load",ret['msg']);
+                    process.exit(1);
+                }
                 Database.setupTable();
             } catch (e) {
                 dialog.showErrorBox("Error on JSON load",e.message);

@@ -61,8 +61,8 @@ exports.setupTable = function() {
 
         let row = db.prepare("SELECT Count(*) FROM last_signature WHERE node_id = ?").get(nodeId);
         let dbCount = row['Count(*)'];
-        if (dbCount == 0) {
-            console.log("Empty last_signature, inserting origin")
+        if (dbCount === 0) {
+            console.log("Empty last_signature, inserting origin");
             // Inserting origin
             db.prepare(`INSERT INTO
                         last_signature(node_id,last_signature,last_signature_signature) 
@@ -287,7 +287,7 @@ exports.loadInitManifest = function(initDataRaw) {
  */
 exports.loadAuthorizationManifest= function(JSONdata){
     let JSONcontent = JSON.parse(JSONdata);
-    if(nodeId!=JSONcontent["node_id"]){
+    if(nodeId!==JSONcontent["node_id"]){
         console.error(`Node id doesn't match`);
         return {
             "status": false,

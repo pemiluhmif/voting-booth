@@ -1,5 +1,5 @@
 {
-  "node_id" : 1,
+  "node_id" : "tps01",
   "amqp_url": "amqp://gxqzgwoj:hXDR_7ciQm93nouQGRC_YGLPbIYnFCid@mustang.rmq.cloudamqp.com/gxqzgwoj",
   "machine_key" : "test_key"
 }
