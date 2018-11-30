@@ -29,8 +29,6 @@ function createWindow () {
     win.on('closed', () => {
         win = null
     });
-
-    // enableNode(NODE_ID, "", "", RMQ_URL);
 }
 
 // This method will be called when Electron has finished
@@ -111,12 +109,17 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     Messaging.connect(amqpUrl, function() {
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
             try {
-                let data = JSON.parse(msg.content.toString());
-                console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
-                Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
+                try {
+                    let data = JSON.parse(msg.content.toString());
+                    console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
+                    Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
 
-                // Acknowledge message WHEN VOTING IS COMPLETE
-                ch.ack(msg);
+                    // Acknowledge message WHEN VOTING IS COMPLETE
+                    ch.ack(msg);
+                } catch (e) {
+                    console.error(e.message);
+                    ch.nack(msg);
+                }
             } catch (e) {
                 console.log(e);
             }
