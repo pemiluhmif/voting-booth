@@ -103,14 +103,6 @@ exports.getConfig = function (key) {
                 return amqpUrl;
             case "machine_key":
                 return machineKey;
-            case "candidates":
-                stmt  = db.prepare("SElECT * FROM candidates");
-                data = stmt.all();
-                if(data===undefined){
-                    return null;
-                }else {
-                    return data;
-                }
             case "voting_types":
                 stmt  = db.prepare("SElECT * FROM voting_types");
                 data = stmt.all();
@@ -146,6 +138,16 @@ exports.getLastSignature = function() {
     }
 };
 
+exports.getCandidates = function (type) {
+    let stmt  = db.prepare("SElECT * FROM candidates WHERE voting_type=?");
+    let data = stmt.all(type);
+    if(data===undefined){
+        return null;
+    }else {
+        return data;
+    }
+
+};
 
 /**
  * generate signature
