@@ -1,5 +1,6 @@
 const database = require('../../database');
 
+// TODO UI - home should be idle screen
 module.exports = (app) => {
     app.get('/', (req, res) => {
         res.render('home.ejs');

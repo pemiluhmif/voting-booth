@@ -3,7 +3,6 @@
 const express = require('express');
 const path = require('path');
 const routes = require('./routes/routes');
-const bodyParser = require('body-parser');
 
 let staticPath = path.join(__dirname, '/static/');
 let app = express();
@@ -11,10 +10,6 @@ let app = express();
 // point for static assets
 app.use(express.static(staticPath));
 console.log(staticPath);
-
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
 // view engine setup
 app.set('views', path.join(__dirname, '/views/'));
