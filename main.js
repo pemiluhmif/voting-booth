@@ -15,6 +15,9 @@ var voterData = null;
 
 var ackMsg = null;
 var ackCh = null;
+var interactTimer = null;
+
+const voterTimeout = 10000;
 
 function createWindow () {
     // Create the browser window.
@@ -41,6 +44,10 @@ function createWindow () {
     ipcMain.on('voted',function (event,arg) {
         event.sender.send("castVoteReply",castVote(arg));
         ackCh.ack(ackMsg);
+    });
+
+    ipcMain.on('voter-interact',function(event, arg){
+        clearTimeout(interactTimer);
     });
 
 
@@ -125,8 +132,6 @@ app.on('activate', () => {
  * TODO Enable node (invoked after loading Authorization Mainfest)
  */
 function enableNode(nodeId, originHash, machineKey, amqpUrl) {
-    NODE_ID = nodeId;
-
     VoteSys.init(Database.getLastSignature(),machineKey);
 
     // Connect to broker
@@ -137,15 +142,17 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                 try {
                     let data = JSON.parse(msg.content.toString());
                     console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
-                    Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
+                    Messaging.sendToQueue(data.reply, JSON.stringify({node_id: Database.getConfig("node_id"), request_id: data.request_id}));
 
                     win.webContents.send("readyToVote",data.voter_nim);
 
                     voterData = data;
                     ackMsg = msg;
                     ackCh = ch;
-                    // Acknowledge message WHEN VOTING IS COMPLETE
-                    // ch.ack(msg);
+                    interactTimer = setTimeout(()=>{
+                        win.webContents.send("voterUnresponsive");
+                        ackCh.ack(ackMsg);
+                    },voterTimeout);
                 } catch (e) {
                     console.error(e.message);
                     ch.nack(msg);

@@ -39,9 +39,16 @@
             }
         });
 
+        ipcRenderer.on('voterUnresponsive',function (event,nim) {
+            // TODO UI - clear for next voter
+            alert('voter unresponsive');
+
+        })
+
         ipcRenderer.on('readyToVote',function (event,nim) {
             // TODO UI - welcome voter
             alert("welcome"+nim);
+            event.sender.send('voter-interact');
 
         })
     </script>
