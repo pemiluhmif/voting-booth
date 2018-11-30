@@ -139,6 +139,8 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                     console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                     Messaging.sendToQueue(data.reply, JSON.stringify({node_id: NODE_ID, request_id: data.request_id}));
 
+                    win.webContents.send("readyToVote",data.voter_nim);
+
                     voterData = data;
                     ackMsg = msg;
                     ackCh = ch;

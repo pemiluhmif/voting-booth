@@ -45,7 +45,7 @@
             closeModal('notif-'+nim);
         }
 
-        ipcRenderer.on('castVoteReply',function (event,status,errmsg) {
+        ipcRenderer.on('castVoteReply',function (event,status) {
             // TODO UI - give feedback to user and return to main
             if(status){
                 console.log("success vote");
@@ -53,5 +53,11 @@
                 console.log("error vote");
             }
         });
+
+        ipcRenderer.on('readyToVote',function (event,nim) {
+            // TODO UI - welcome voter
+            alert("welcome"+nim);
+
+        })
     </script>
 </html>
