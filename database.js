@@ -413,3 +413,18 @@ exports.performPersonDataUpdate = function(node_id, person_records) {
     transaction(person_records);
 
 };
+
+exports.updatePersonData = function (nim,key,data) {
+    let stmt;
+
+    switch (key) {
+        case "last_queued":
+            stmt = db.prepare('UPDATE voters SET last_queued = ? WHERE nim = ?');
+            stmt.run(data,nim);
+            break;
+        case "voted":
+            stmt = db.prepare('UPDATE voters SET voted = ? WHERE nim = ?');
+            stmt.run(data,nim);
+            break;
+    }
+};
