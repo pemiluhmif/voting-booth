@@ -43,7 +43,8 @@ exports.setupTable = function() {
     console.log("Setting up table");
 
     try {
-        db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
+        db.exec('DROP TABLE IF EXISTS vote_records');
+        db.exec(`CREATE TABLE vote_record (
             vote_id TEXT NOT NULL PRIMARY KEY,
             node_id TEXT NOT NULL,
             previous_signature BLOB NOT NULL,
@@ -52,22 +53,17 @@ exports.setupTable = function() {
         );
         `);
 
-        db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
+        db.exec('DROP TABLE IF EXISTS last_signature');
+        db.exec(`CREATE TABLE last_signature (
             node_id TEXT PRIMARY KEY NOT NULL,
             last_signature BLOB NOT NULL,
             last_signature_signature BLOB NOT NULL
             );
          `);
 
-        let row = db.prepare("SELECT Count(*) FROM last_signature WHERE node_id = ?").get(nodeId);
-        let dbCount = row['Count(*)'];
-        if (dbCount === 0) {
-            console.log("Empty last_signature, inserting origin");
-            // Inserting origin
-            db.prepare(`INSERT INTO
+        db.prepare(`INSERT INTO
                         last_signature(node_id,last_signature,last_signature_signature) 
                         VALUES(?,?,?)`).run(nodeId, originHash, generateSig(originHash));
-        }
 
         return {
             "status":true
@@ -147,6 +143,16 @@ exports.getCandidates = function (type) {
         return data;
     }
 
+};
+
+exports.getVoters = function (nim) {
+    let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
+    let data = stmt.get(nim);
+    if(data===undefined){
+        return null;
+    }else {
+        return data;
+    }
 };
 
 /**
