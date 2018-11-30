@@ -167,6 +167,7 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             if(data.node_id!==Database.getConfig("node_id")) {
                 Database.performVoteDataUpdate(Database.getConfig("node_id"), data.vote_payload, data.last_signature);
             }
+            ch.ack(msg);
         });
     });
 }

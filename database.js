@@ -43,7 +43,7 @@ exports.setupTable = function() {
     console.log("Setting up table");
 
     try {
-        db.exec('DROP TABLE IF EXISTS vote_records');
+        db.exec('DROP TABLE IF EXISTS vote_record');
         db.exec(`CREATE TABLE vote_record (
             vote_id TEXT NOT NULL PRIMARY KEY,
             node_id TEXT NOT NULL,
