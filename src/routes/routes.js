@@ -1,12 +1,11 @@
-const database = require("../../database");
+const database = require('../../database');
 
 module.exports = (app) => {
     app.get('/', (req, res) => {
         res.render('home.ejs');
-    })
+    });
 
     let votes = database.getConfig("voting_types");
-
 
     votes.forEach(data => {
         data.candidates = database.getCandidates(data.type);
@@ -14,4 +13,6 @@ module.exports = (app) => {
             res.render('voter.ejs', {data});
         })
     });
-}
+
+
+};

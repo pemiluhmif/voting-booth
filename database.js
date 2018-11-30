@@ -44,7 +44,7 @@ exports.setupTable = function() {
 
     try {
         db.exec(`CREATE TABLE IF NOT EXISTS vote_record (
-            vote_id INTEGER NOT NULL PRIMARY KEY,
+            vote_id TEXT NOT NULL PRIMARY KEY,
             node_id TEXT NOT NULL,
             previous_signature BLOB NOT NULL,
             voted_candidate TEXT NOT NULL,
@@ -128,12 +128,12 @@ exports.getConfig = function (key) {
 
 exports.getLastSignature = function() {
     if(db!=null && nodeId!=null){
-        let stmt  = db.prepare("SElECT value FROM config WHERE key = ?");
-        let data = stmt.get(key);
+        let stmt  = db.prepare("SElECT last_signature FROM last_signature WHERE node_id = ?");
+        let data = stmt.get(nodeId);
         if(data===undefined){
             return null;
         }else {
-            return stmt.get(key)['value'];
+            return data['last_signature'];
         }
     }
 };
@@ -395,7 +395,6 @@ exports.performPersonDataUpdate = function(node_id, person_records) {
             let voteDate = new Date(voteData['last_modified'] );
             let dataDate = new Date(dataInsert['last_modified']);
             if(voteDate < dataDate){
-                console.log("in");
                 stmtUpdate.run(dataInsert['name'],
                     dataInsert['last_queued'],
                     dataInsert['voted'],
