@@ -3,7 +3,7 @@ const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
 const Messaging = require('./messaging');
 
-const INACTIVITY_TIMEOUT = 10 * 1000; // 60 seconds
+const INACTIVITY_TIMEOUT = 60 * 1000; // 60 seconds
 const INACTIVITY_WARNING_TIMEOUT = 10 * 1000; // 10 seconds
 
 var timeoutTimer, warningTimer;
