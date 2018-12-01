@@ -463,7 +463,7 @@ exports.performPersonDataUpdate = function(node_id, person_records) {
             if(voteDate < dataDate){
                 stmtUpdate.run(dataInsert['name'],
                     dataInsert['last_queued'],
-                    dataInsert['voted'],
+                    (voteData.voted === 0) ? dataInsert['voted'] : 1,   // If voteData.voted is currently 1, ignore
                     dataInsert['last_modified'],
                     dataInsert['nim']);
             }

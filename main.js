@@ -24,7 +24,7 @@ function createWindow () {
         resizable: true
     });
     win.setFullScreen(true);
-
+    
     // Load main site
     win.loadURL('http://localhost:7000/');
     win.focus();
