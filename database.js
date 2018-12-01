@@ -145,16 +145,42 @@ exports.getCandidates = function (type) {
 
 };
 
-exports.getVoters = function (nim) {
-    let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
-    let data = stmt.get(nim);
-    if(data===undefined){
-        return null;
-    }else {
-        return data;
+exports.getLastSignatures = function() {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT node_id, last_signature, last_signature_signature AS signature FROM last_signature");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
     }
 };
 
+
+exports.getVoter = function (nim) {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
+        let data = stmt.get(nim);
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
+
+exports.getVoteRecords = function () {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM vote_record");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
 /**
  * generate signature
  * @param input data to hash
