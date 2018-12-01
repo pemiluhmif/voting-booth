@@ -201,7 +201,6 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             console.log("request data");
         });
         Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
-            console.log("rec");
             let data = JSON.parse(msg.content.toString());
 
             if(data.votes !== undefined){
@@ -217,6 +216,20 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             }
 
             console.log(data);
+        });
+        Messaging.setMessageListener(Messaging.EX_REQUEST_DATA_BROADCAST, (msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
+            console.log(data);
+            let votes = Database.getVoteRecords();
+            let lastSigs = Database.getLastSignatures();
+            console.log(votes);
+            console.log(lastSigs);
+            let replyData = {
+                "node_id": Database.getConfig("node_id"),
+                "votes": votes,
+                "last_hashes": lastSigs
+            };
+            Messaging.sendToQueue(Messaging.EX_VOTE_DATA_REPLY+":"+data.node_id,JSON.stringify(replyData));
         });
 
 
@@ -240,7 +253,10 @@ function castVote(argument){
 
     try {
         let data = {};
-        data[argument.type] = argument.candidate_no;
+        argument.forEach((item)=>{
+            data[item.type] = item.candidate_no;
+        });
+
 
         let objret = VoteSys.createVotePayload(data);
 
