@@ -90,6 +90,7 @@ function cancelVotingProcess() {
 
 function castVote(vote_type, candidate_no) {
     console.log("Vote casted");
+    deferTimeout();
     if(vtypes.includes(vote_type)) {
         vote_data[vote_type] = candidate_no;
 
