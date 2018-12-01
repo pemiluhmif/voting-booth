@@ -3,6 +3,9 @@ const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
 const Messaging = require('./messaging');
 
+const VOTE_TIMEOUT = 10 * 1000; // 5 minutes
+var timeoutTimer;
+
 var win;
 var vtypes = [];
 var vote_data = {};
@@ -43,11 +46,26 @@ exports.begin = function(voter_data, ack_msg, ack_ch) {
     voteOngoing = true;
 
     win.loadURL("http://localhost:7000/ins");
+
+    timeoutTimer = setTimeout(function() {
+        cancelVotingProcess();
+    }, VOTE_TIMEOUT);
 };
 
 function dismissInstructions() {
     i = 0;
     win.loadURL("http://localhost:7000/vote/" + vtypes[i]);
+    clearTimeout(timeoutTimer);
+    timeoutTimer = setTimeout(function() {
+        cancelVotingProcess();
+    }, VOTE_TIMEOUT);
+}
+
+function cancelVotingProcess() {
+    // Stop voting process
+    voteOngoing = false;
+    win.loadURL("http://localhost:7000/");
+    ackCh.ack(ackMsg);
 }
 
 function castVote(vote_type, candidate_no) {
@@ -63,6 +81,7 @@ function castVote(vote_type, candidate_no) {
             // Cast vote
             // TODO cast vote
             voteOngoing = false;
+            clearTimeout(timeoutTimer);
             finalizeVote(vote_data);
 
             win.loadURL("http://localhost:7000/finished");

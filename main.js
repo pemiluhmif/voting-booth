@@ -12,10 +12,6 @@ let serv = null;
 
 var voterData = null;
 
-var interactTimer = null;
-
-const voterTimeout = 10000;
-
 /**
  *  Create new window, load view, and set up ipc
  */
@@ -40,18 +36,6 @@ function createWindow () {
     });
 
     VoteWindow.init(win);
-
-    /*ipcMain.on('voted',function (event,arg) {
-        event.sender.send("castVoteReply",castVote(arg));
-        ackCh.ack(ackMsg);
-    });
-
-    ipcMain.on('voter-interact',function(event, arg){
-        console.log("delete timer");
-        clearTimeout(interactTimer);
-    });*/
-
-
 }
 
 /**
