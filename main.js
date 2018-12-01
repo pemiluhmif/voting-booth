@@ -26,7 +26,7 @@ function createWindow () {
     win.setFullScreen(true);
 
     // Load main site
-    win.loadURL('http://localhost:7000/finished');
+    win.loadURL('http://localhost:7000/');
     win.focus();
 
     // Emitted when the window is closed.

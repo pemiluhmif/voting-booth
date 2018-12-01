@@ -7,4 +7,16 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="/css/index.css">
+    <script type="text/javascript">
+        const ipcRenderer = require('electron').ipcRenderer;
+
+        let defer_timeout = function() {
+            ipcRenderer.send("defer-timeout");
+            document.querySelector(`#modal-timeout`).style.display = 'none';
+        }
+
+        ipcRenderer.on('timeout-warning', function(event, arg) {
+            document.querySelector(`#modal-timeout`).style.display = 'block';
+        });
+    </script>
 </head>

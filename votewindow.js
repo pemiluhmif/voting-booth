@@ -3,8 +3,10 @@ const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
 const Messaging = require('./messaging');
 
-const VOTE_TIMEOUT = 10 * 1000; // 5 minutes
-var timeoutTimer;
+const INACTIVITY_TIMEOUT = 10 * 1000; // 60 seconds
+const INACTIVITY_WARNING_TIMEOUT = 10 * 1000; // 10 seconds
+
+var timeoutTimer, warningTimer;
 
 var win;
 var vtypes = [];
@@ -33,6 +35,12 @@ exports.init = function(window) {
             dismissInstructions();
         }
     });
+
+    ipcMain.on('defer-timeout',function (event, arg) {
+        if(voteOngoing) {
+            deferTimeout();
+        }
+    });
 };
 
 exports.begin = function(voter_data, ack_msg, ack_ch) {
@@ -47,18 +55,30 @@ exports.begin = function(voter_data, ack_msg, ack_ch) {
 
     win.loadURL("http://localhost:7000/ins?name=" + voter_data.voter_name + "&nim=" + voter_data.voter_nim);
 
-    timeoutTimer = setTimeout(function() {
-        cancelVotingProcess();
-    }, VOTE_TIMEOUT);
+    resetInactivityTimer();
 };
 
 function dismissInstructions() {
     i = 0;
     win.loadURL("http://localhost:7000/vote/" + vtypes[i]);
+    resetInactivityTimer();
+}
+
+function resetInactivityTimer() {
     clearTimeout(timeoutTimer);
+    clearTimeout(warningTimer);
     timeoutTimer = setTimeout(function() {
-        cancelVotingProcess();
-    }, VOTE_TIMEOUT);
+        // Show warning
+        win.webContents.send("timeout-warning");
+
+        warningTimer = setTimeout(function() {
+            cancelVotingProcess();
+        }, INACTIVITY_WARNING_TIMEOUT);
+    }, INACTIVITY_TIMEOUT);
+}
+
+function deferTimeout() {
+    resetInactivityTimer();
 }
 
 function cancelVotingProcess() {

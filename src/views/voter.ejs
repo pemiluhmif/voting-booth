@@ -15,8 +15,7 @@
         <% include partials/footer %>
     </body>
     <script>
-        $(".timer").TimeCircles({time: { Days: { show: false }, Hours: { show: false }, Minutes: { show: false} }});
-        const ipcRenderer = require('electron').ipcRenderer;
+        //$(".timer").TimeCircles({time: { Days: { show: false }, Hours: { show: false }, Minutes: { show: false} }});
 
         let choose = (modalId) => {
             document.querySelector(`#${modalId}`).style.display = 'block';
