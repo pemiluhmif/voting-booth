@@ -49,6 +49,7 @@ exports.init = function(nid, ntype) {
 exports.connect = function(url, callback) {
     if(nodeId != null) {
         amqp.connect(url, function (err, conn) {
+            console.log(err);
             conn.createChannel(function (err, ch) {
                 assertExchanges(ch);
                 if(callback != null) callback();
@@ -208,11 +209,11 @@ function assertDataManagementExchanges(ch) {
 
     ch.assertExchange(EX_VOTE_DATA_REPLY, 'topic', {durable: false});
 
-    ch.assertQueue(buildQueueName(EX_VOTE_DATA_REPLY), {durable: true, exclusive: true}, function(err, q) {
+    ch.assertQueue(buildQueueName(EX_VOTE_DATA_REPLY), {durable: true, exclusive: false}, function(err, q) {
         ch.bindQueue(q.queue, EX_VOTE_DATA_REPLY, '');
 
         ch.consume(q.queue, function(msg) {
-            //console.log(" [x] %s", msg.content.toString());
+            console.log(" [x] %s", msg.content.toString());
             let callback = listeners[EX_VOTE_DATA_REPLY];
             if(callback !== undefined)
                 callback(msg, ch);
@@ -221,7 +222,7 @@ function assertDataManagementExchanges(ch) {
 
     ch.assertExchange(EX_PERSON_DATA_REPLY, 'topic', {durable: false});
 
-    ch.assertQueue(buildQueueName(EX_PERSON_DATA_REPLY), {durable: true, exclusive: true}, function(err, q) {
+    ch.assertQueue(buildQueueName(EX_PERSON_DATA_REPLY), {durable: true, exclusive: false}, function(err, q) {
         ch.bindQueue(q.queue, EX_PERSON_DATA_REPLY, '');
 
         ch.consume(q.queue, function(msg) {

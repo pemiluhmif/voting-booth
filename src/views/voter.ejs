@@ -3,7 +3,6 @@
     <% include partials/head %>
     <body>
         <div class="container">
-            <div class="timer" data-timer="60"></div>
             <div style="text-align: center">
                 <h1 class="title" style="margin-bottom: 30px; padding-top: 3vh">Klik <%- data.title %> Pilihanmu!</h1>
             </div>
@@ -20,40 +19,15 @@
         const ipcRenderer = require('electron').ipcRenderer;
 
         let choose = (modalId) => {
-            $(".timer").TimeCircles().stop();
             document.querySelector(`#${modalId}`).style.display = 'block';
         }
         let closeModal = (modalId) => {
-            $(".timer").TimeCircles().start();
             document.querySelector(`#${modalId}`).style.display = 'none';
         }
         let vote = (type,candidate_no,nim) =>{
             console.log("Vote "+candidate_no);
-            ipcRenderer.send("voted", {"type":type,
-                "candidate_no":candidate_no});
+            ipcRenderer.send("voted", {"vote_type":type, "candidate_no":candidate_no});
             closeModal('notif-'+nim);
         }
-
-        ipcRenderer.on('castVoteReply',function (event,status) {
-            // TODO UI - give feedback to user and return to main
-            if(status){
-                console.log("success vote");
-            }else{
-                console.log("error vote");
-            }
-        });
-
-        ipcRenderer.on('voterUnresponsive',function (event,nim) {
-            // TODO UI - clear for next voter
-            alert('voter unresponsive');
-
-        })
-
-        ipcRenderer.on('readyToVote',function (event,nim) {
-            // TODO UI - welcome voter
-            alert("welcome"+nim);
-            event.sender.send('voter-interact');
-
-        })
     </script>
 </html>

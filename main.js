@@ -4,18 +4,11 @@ const Database = require('./database');
 const yargs = require('yargs');
 const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
+const VoteWindow = require('./votewindow');
 
 let win;
 
 let serv = null;
-
-var voterData = null;
-
-var ackMsg = null;
-var ackCh = null;
-var interactTimer = null;
-
-const voterTimeout = 10000;
 
 /**
  *  Create new window, load view, and set up ipc
@@ -40,16 +33,7 @@ function createWindow () {
         win = null
     });
 
-    ipcMain.on('voted',function (event,arg) {
-        event.sender.send("castVoteReply",castVote(arg));
-        ackCh.ack(ackMsg);
-    });
-
-    ipcMain.on('voter-interact',function(event, arg){
-        clearTimeout(interactTimer);
-    });
-
-
+    VoteWindow.init(win);
 }
 
 /**
@@ -81,17 +65,27 @@ app.on('ready', ()=>{
                     dialog.showErrorBox("Error on JSON (manifest) load",ret['msg']);
                     process.exit(1);
                 }
-                ret = Database.loadAuthorizationManifest(Database.loadJSON(argv.auth));
-                if(ret['status']===false){
-                    dialog.showErrorBox("Error on JSON (auth) load",ret['msg']);
-                    process.exit(1);
-                }
-                Database.setupTable();
             } catch (e) {
-                dialog.showErrorBox("Error on JSON load",e.message);
+                dialog.showErrorBox("Error on JSON (manifest) load",e.message);
                 console.error(e.message);
                 process.exit(1);
             }
+        }
+
+        // auth config
+        try {
+            ret = Database.loadAuthorizationManifest(Database.loadJSON(argv.auth));
+            if(ret['status']===false){
+                dialog.showErrorBox("Error on JSON (auth) load",ret['msg']);
+                process.exit(1);
+            }
+            if(argv.initial){
+                Database.setupTable();
+            }
+        } catch (e) {
+            dialog.showErrorBox("Error on JSON (auth) load",e.message);
+            console.error(e.message);
+            process.exit(1);
         }
 
         // Setup node
@@ -106,13 +100,13 @@ app.on('ready', ()=>{
             process.exit(1);
         }
 
-        createWindow();
-
     }else{
         dialog.showErrorBox("Error on init",status["msg"]);
     }
 
 });
+
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -136,6 +130,7 @@ app.on('activate', () => {
  *  @param amqpUrl URL of rabbbitmq server
  */
 function enableNode(nodeId, originHash, machineKey, amqpUrl) {
+    console.log(Database.getLastSignature());
     VoteSys.init(Database.getLastSignature(),machineKey);
 
     // Connect to broker
@@ -148,16 +143,8 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                     console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                     Messaging.sendToQueue(data.reply, JSON.stringify({node_id: Database.getConfig("node_id"), request_id: data.request_id}));
 
-                    win.webContents.send("readyToVote",data.voter_nim);
-
-                    voterData = data;
-                    ackMsg = msg;
-                    ackCh = ch;
-                    interactTimer = setTimeout(()=>{
-                        win.webContents.send("voterUnresponsive");
-                        ackCh.ack(ackMsg);
-                    },voterTimeout);
-                } catch (e) {
+                    VoteWindow.begin(data, msg, ch);
+                    } catch (e) {
                     console.error(e.message);
                     ch.nack(msg);
                 }
@@ -170,8 +157,9 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
         Messaging.setMessageListener(Messaging.EX_VOTE_CASTED, (msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
             console.log("Receive vote data");
-            if(data.node_id!==Database.getConfig("node_id")) {
-                Database.performVoteDataUpdate(Database.getConfig("node_id"), data.vote_payload, data.last_signature);
+            if(data.node_id !== Database.getConfig("node_id")) {
+                Database.performVoteDataUpdate(data.node_id, data.vote_payload);
+                Database.performSigDataUpdate(data.node_id, data.last_signature);
                 Database.updatePersonData(data.voter_nim,"voted",1);
                 Database.updatePersonData(data.voter_nim,"last_queued",null);
             }
@@ -181,63 +169,67 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
         // Keeps track of queued voter
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED, (msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
-            console.log("Receive vote data");
             Database.updatePersonData(data.voter_nim, "last_queued", data.timestamp);
         });
-    });
-}
 
-/**
- * Cast vote
- * Update the database and publish vote casted message
- * @param argument voting JSON object {"type": <type>,"candidate_no":<number>}
- * @returns true if succeed
- */
-function castVote(argument){
+        Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
 
-    try {
-        let data = {};
-        data[argument.type] = argument.candidate_no;
-
-        let objret = VoteSys.createVotePayload(data);
-
-        let voteData = objret['votePayload'];
-        voteData['vote_data'] = JSON.parse(voteData['vote_data']);
-        let sigData = objret['lastHashPayload'];
-
-        let nodeId = Database.getConfig("node_id");
-
-        let voteCastedData = {
-            "node_id": nodeId,
-            "request_id": voterData.request_id,
-            "voter_nim": voterData.voter_nim,
-            "vote_payload": {
-                "previous_signature": voteData['previous_hash'],
-                "node_id": nodeId,
-                "vote_id": voteData['vote_data']['vote_id'],
-                "voted_candidate": JSON.stringify(voteData['vote_data']['vote_data']),
-                "signature": voteData['current_hash']
-            },
-            "last_signature": {
-                "node_id": nodeId,
-                "last_signature": sigData['last_hash'],
-                "signature": sigData['last_hash_hmac']
+            if(data.persons !== undefined){
+                data.persons.forEach((item)=>{
+                    Database.performPersonDataUpdate(data.node_id,item);
+                })
             }
+        });
+
+        Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
+
+            if(data.votes !== undefined){
+                data.votes.forEach((item)=>{
+                    Database.performVoteDataUpdate(data.node_id,item);
+                });
+            }
+
+            if(data.last_hashes!==undefined){
+                data.last_hashes.forEach((item)=>{
+                    Database.performSigDataUpdate(data.node_id,item);
+                });
+            }
+
+            console.log(data);
+        });
+        Messaging.setMessageListener(Messaging.EX_REQUEST_DATA_BROADCAST, (msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
+            console.log(data);
+            let votes = Database.getVoteRecords();
+            let lastSigs = Database.getLastSignatures();
+            console.log(votes);
+            console.log(lastSigs);
+            let replyVote = {
+                "node_id": Database.getConfig("node_id"),
+                "votes": votes,
+                "last_hashes": lastSigs
+            };
+            Messaging.sendToQueue(Messaging.EX_VOTE_DATA_REPLY+":"+data.node_id,JSON.stringify(replyVote));
+
+            let persons = Database.getVoters();
+            console.log(persons);
+            let replyPerson = {
+                "node_id": Database.getConfig("node_id"),
+                "persons": persons
+            };
+
+            Messaging.sendToQueue(Messaging.EX_PERSON_DATA_REPLY+":"+data.node_id,JSON.stringify(replyPerson));
+        });
+
+
+        let data = {
+            "node_id" : Database.getConfig("node_id")
         };
 
-        Messaging.publish(Messaging.EX_VOTE_CASTED, '', JSON.stringify(voteCastedData), null);
+        Messaging.publish(Messaging.EX_REQUEST_DATA_BROADCAST,'',JSON.stringify(data),null);
 
-        // Messaging.publish(Messaging.getQueueName(Messaging.EX_VOTE_CASTED), JSON.stringify(voteCastedData));
-
-        Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload'], voteCastedData['last_signature']);
-        Database.updatePersonData(voterData.voter_nim,"voted",1);
-
-        VoteSys.commitVotePayload();
-
-        return true;
-
-    } catch (e) {
-        console.error(e.message);
-        return false;
-    }
+        createWindow();
+    });
 }

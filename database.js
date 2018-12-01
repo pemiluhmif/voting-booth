@@ -145,16 +145,54 @@ exports.getCandidates = function (type) {
 
 };
 
-exports.getVoters = function (nim) {
-    let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
-    let data = stmt.get(nim);
-    if(data===undefined){
-        return null;
-    }else {
-        return data;
+exports.getLastSignatures = function() {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT node_id, last_signature, last_signature_signature AS signature FROM last_signature");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
     }
 };
 
+
+exports.getVoter = function (nim) {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
+        let data = stmt.get(nim);
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
+
+exports.getVoters = function () {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM voters");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
+
+exports.getVoteRecords = function () {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM vote_record");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
 /**
  * generate signature
  * @param input data to hash
@@ -293,6 +331,9 @@ exports.loadInitManifest = function(initDataRaw) {
  */
 exports.loadAuthorizationManifest= function(JSONdata){
     let JSONcontent = JSON.parse(JSONdata);
+    if(nodeId==null){
+        nodeId = this.getConfig("node_id");
+    }
     if(nodeId!==JSONcontent["node_id"]){
         console.error(`Node id doesn't match`);
         return {
@@ -324,7 +365,7 @@ exports.authorize = function(machine_key) {
  * @param vote_records JSON of vote records
  * @param signature_records JSON of signature records
  */
-exports.performVoteDataUpdate = function(node_id, vote_records, signature_records) {
+exports.performVoteDataUpdate = function(node_id, vote_records) {
     /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same vote_id exists, prioritize the data coming from the node of which the data is generated.
      */
@@ -333,18 +374,7 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
     let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
     let stmtUpdate = db.prepare("UPDATE vote_record SET node_id = ?, previous_signature = ?, voted_candidate = ?, signature = ? WHERE vote_id = ?");
 
-    let stmtUpdateSig = db.prepare(`INSERT OR REPLACE INTO last_signature (node_id, last_signature, last_signature_signature) VALUES (  ?, ?, ? );`);
-    // let stmtUpdateSig = db.prepare("UPDATE last_signature VALUES (?,?,?)");
-
-
-    db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
-            node_id TEXT NOT NULL,
-            last_signature BLOB NOT NULL,
-            last_signature_signature BLOB NOT NULL
-            );
-         `);
-
-    let transaction = db.transaction((dataInsert,sigInsert)=>{
+    let transaction = db.transaction((dataInsert)=>{
         let voteData = stmtCount.get(dataInsert['vote_id']);
         if(voteData===undefined){
             stmtInsert.run(dataInsert['vote_id'],
@@ -352,10 +382,6 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
                 dataInsert['previous_signature'],
                 dataInsert['voted_candidate'],
                 dataInsert['signature']);
-            stmtUpdateSig.run(sigInsert['node_id'],
-                sigInsert['last_signature'],
-                sigInsert['signature']);
-
         }else{
             if(node_id === dataInsert['node_id']){
                 stmtUpdate.run(dataInsert['node_id'],
@@ -363,14 +389,24 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
                     dataInsert['voted_candidate'],
                     dataInsert['signature'],
                     dataInsert['vote_id']);
-                stmtUpdateSig.run(sigInsert['node_id'],
-                    sigInsert['last_signature'],
-                    sigInsert['signature']);
             }
         }
     });
 
-    transaction(vote_records,signature_records);
+    transaction(vote_records);
+};
+
+exports.performSigDataUpdate = function(node_id,sigData){
+    let stmtUpdateSig = db.prepare(`INSERT OR REPLACE INTO last_signature (node_id, last_signature, last_signature_signature) VALUES (  ?, ?, ? );`);
+
+    let transaction = db.transaction((sigInsert)=>{
+        stmtUpdateSig.run(sigInsert['node_id'],
+            sigInsert['last_signature'],
+            sigInsert['signature']);
+    });
+
+    transaction(sigData);
+
 };
 
 /**

@@ -4,7 +4,7 @@
   "description": "Pemilu HMIF 2019 voting booth",
   "main": "main.js",
   "scripts": {
-    "start": "electron . -i --config=sample_manifest.json --auth=sample_auth.json",
+    "start": "electron . --config=sample_manifest.json --auth=sample_auth.json",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pack": "build --dir",
     "dist": "build",

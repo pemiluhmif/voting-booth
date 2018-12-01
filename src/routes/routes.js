@@ -6,14 +6,20 @@ module.exports = (app) => {
         res.render('home.ejs');
     });
 
+    app.get('/ins', (req, res) => {
+        res.render('instructions.ejs', {"voter_name": req.query.name, "voter_nim": req.query.nim});
+    });
+
+    app.get('/finished', (req, res) => {
+        res.render('thank.ejs');
+    });
+
     let votes = database.getConfig("voting_types");
 
     votes.forEach(data => {
         data.candidates = database.getCandidates(data.type);
-        app.get(`/${data['type']}`, (req, res) => {
+        app.get(`/vote/${data['type']}`, (req, res) => {
             res.render('voter.ejs', {data});
         })
     });
-
-
 };

@@ -21,6 +21,6 @@ routes(app);
 
 app.listen(7000, function() {
     console.log('Express is running on port 7000');
-})
+});
 
 module.exports = app;
