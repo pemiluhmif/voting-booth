@@ -15,8 +15,6 @@ var ackMsg = null;
 var ackCh = null;
 var interactTimer = null;
 
-var nodeLoaded = false;
-
 const voterTimeout = 10000;
 
 /**
@@ -36,9 +34,6 @@ function createWindow () {
     // Load main site
     win.loadURL('http://localhost:7000/');
     win.focus();
-
-    // Open the DevTools.
-    win.webContents.openDevTools()
 
     // Emitted when the window is closed.
     win.on('closed', () => {
@@ -182,6 +177,8 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                 console.log(e);
             }
         });
+
+        // Keeps track of casted votes
         Messaging.setMessageListener(Messaging.EX_VOTE_CASTED, (msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
             console.log("Receive vote data");
@@ -192,6 +189,13 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                 Database.updatePersonData(data.voter_nim,"last_queued",null);
             }
             ch.ack(msg);
+        });
+
+        // Keeps track of queued voter
+        Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED, (msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
+            console.log("Receive vote data");
+            Database.updatePersonData(data.voter_nim, "last_queued", data.timestamp);
         });
         Messaging.setMessageListener(Messaging.EX_REQUEST_DATA_BROADCAST, (msg,ch)=>{
             console.log("request data");
