@@ -1,7 +1,7 @@
-<div class="card profile" id="card-<%- name.nim %>" onclick="choose('notif-<%- name.NIM %>')">
+<div class="card profile" id="card-<%- name.nim %>" onclick="openModal('notif-<%- name.NIM %>')">
     <div class="card-image">
         <figure class="image is-4by5">
-            <img src=<%- name.image_file_path %> alt="nama">
+            <img src="<%- name.image_file_path %>" alt="nama">
         </figure>
     </div>
     <div class="card-content">
@@ -12,7 +12,7 @@
 
 <div class="confirm-choose" id="notif-<%- name.NIM %>">
     <div class="notification">
-        <p class="title is-4">Sudah yakin memilih <%- name.name %>?</p>
+        <p class="title is-3" style="margin-bottom: 1.2rem">Sudah yakin memilih <%- name.name %>?</p>
         <div class="level">
             <div class="level-item">
                 <button class="button is-link" onclick="vote('<%- name.voting_type %>','<%- name.candidate_no %>','<%- name.NIM %>')">Ya, saya yakin</button>

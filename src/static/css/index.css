@@ -27,13 +27,14 @@ body {
     background: rgba(0, 0, 0, 0.2);
 }
 .confirm-choose .notification {
-    width: 50vw;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    width: 30vw;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
     top: 30%;
     text-align: center;
     margin: 0 auto;
 }
 .confirm-choose .level-item > button {
     width: 85%;
+    font-size: 1.3rem;
 }
