@@ -28,8 +28,7 @@ body {
 }
 .confirm-choose .notification {
     width: 30vw;
-    padding-top: 3rem;
-    padding-bottom: 3rem;
+    padding: 3rem 2.5rem 3rem 2.5rem !important;
     top: 30%;
     text-align: center;
     margin: 0 auto;

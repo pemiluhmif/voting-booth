@@ -29,16 +29,16 @@
   "candidates": [
     {
       "candidate_no": "1",
-      "name": "Budi",
+      "name": "Nama Calon 1",
       "nim":13516999,
-      "image_url": "https://dw9to29mmj727.cloudfront.net/misc/newsletter-naruto3.png",
+      "image_url": "https://cdn.umnbootcamp.com/wp-content/uploads/sites/60/2018/03/placeholder-person.png",
       "voting_type": "kahim"
     },
     {
       "candidate_no": "2",
-      "name": "Badu",
+      "name": "Nama Calon 2",
       "nim":18217999,
-      "image_url": "https://vignette.wikia.nocookie.net/weeky-shonen-jump/images/2/25/Sasuke_Uchiha.png/revision/latest?cb=20161120051232",
+      "image_url": "http://style.anu.edu.au/_anu/4/images/placeholders/person.png",
       "voting_type": "kahim"
     }
   ]
