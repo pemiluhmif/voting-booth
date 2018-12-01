@@ -122,6 +122,10 @@ exports.getConfig = function (key) {
     }
 };
 
+/**
+ * Return last signature of current node from database
+ * @returns JSON object last signature
+ */
 exports.getLastSignature = function() {
     if(db!=null && nodeId!=null){
         let stmt  = db.prepare("SElECT last_signature FROM last_signature WHERE node_id = ?");
@@ -134,6 +138,11 @@ exports.getLastSignature = function() {
     }
 };
 
+/**
+ * Return all candidates from specific type
+ * @param type candidates type
+ * @returns Array of JSON object of candidates
+ */
 exports.getCandidates = function (type) {
     let stmt  = db.prepare("SElECT * FROM candidates WHERE voting_type=?");
     let data = stmt.all(type);
@@ -145,6 +154,10 @@ exports.getCandidates = function (type) {
 
 };
 
+/**
+ * Return all last signature stored in database
+ * @returns array of JSON object for last_signature
+ */
 exports.getLastSignatures = function() {
     if(db!=null){
         let stmt  = db.prepare("SElECT node_id, last_signature, last_signature_signature AS signature FROM last_signature");
@@ -157,7 +170,11 @@ exports.getLastSignatures = function() {
     }
 };
 
-
+/**
+ * Return voter with specific NIM
+ * @param nim NIM of voter
+ * @returns JSON object of voter
+ */
 exports.getVoter = function (nim) {
     if(db!=null){
         let stmt  = db.prepare("SElECT * FROM voters WHERE nim=?");
@@ -170,6 +187,10 @@ exports.getVoter = function (nim) {
     }
 };
 
+/**
+ * Return all voters from database
+ * @returns array of JSON object for voter
+ */
 exports.getVoters = function () {
     if(db!=null){
         let stmt  = db.prepare("SElECT * FROM voters");
@@ -182,6 +203,10 @@ exports.getVoters = function () {
     }
 };
 
+/**
+ * Return all vote records
+ * @returns array of JSON object for vote
+ */
 exports.getVoteRecords = function () {
     if(db!=null){
         let stmt  = db.prepare("SElECT * FROM vote_record");
@@ -200,7 +225,7 @@ exports.getVoteRecords = function () {
 function generateSig(input) {
     let signer = crypto.createHmac('sha256', machineKey);
     return signer.update(input).digest('hex');
-};
+}
 
 /**
  * Close the database connection
@@ -211,7 +236,7 @@ exports.close = function() {
 
 /**
  * Load Initialization Manifest and persists it to SQLite
- * @param initData initialization manifest JSON object
+ * @param initDataRaw initialization manifest JSON object
  */
 exports.loadInitManifest = function(initDataRaw) {
     if(db!=null){
@@ -256,7 +281,7 @@ exports.loadInitManifest = function(initDataRaw) {
 
         console.log(initData);
 
-        var stmt = db.prepare("INSERT INTO config VALUES (?,?)");
+        let stmt = db.prepare("INSERT INTO config VALUES (?,?)");
 
         // Node id
         nodeId = initData['node_id'];
@@ -284,7 +309,7 @@ exports.loadInitManifest = function(initDataRaw) {
 
         stmt = db.prepare("INSERT INTO voters (nim,name,last_queued) VALUES (?,?,null)");
 
-        for (var key in initData['voters']) {
+        for (let key in initData['voters']) {
             let data = initData['voters'][key];
 
             stmt.run(data['nim'],data['name']);
@@ -294,7 +319,7 @@ exports.loadInitManifest = function(initDataRaw) {
 
         stmt = db.prepare("INSERT INTO voting_types VALUES (?,?)");
 
-        for (var key in initData['voting_types']) {
+        for (let key in initData['voting_types']) {
             let data = initData['voting_types'][key];
             stmt.run(data['type'], data['title']);
         }
@@ -303,7 +328,7 @@ exports.loadInitManifest = function(initDataRaw) {
 
         stmt = db.prepare("INSERT INTO candidates VALUES (?,?,?,?,?)");
 
-        for (var key in initData['candidates']) {
+        for (let key in initData['candidates']) {
             let data = initData['candidates'][key];
             stmt.run(data['candidate_no'],
                 data['voting_type'],
@@ -363,7 +388,6 @@ exports.authorize = function(machine_key) {
  * Update vote data
  * @param node_id node ID the data coming from
  * @param vote_records JSON of vote records
- * @param signature_records JSON of signature records
  */
 exports.performVoteDataUpdate = function(node_id, vote_records) {
     /* Data coming in from this method belongs to an individual node, one at a time.
