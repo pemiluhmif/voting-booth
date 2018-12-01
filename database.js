@@ -374,7 +374,7 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
 };
 
 /**
- * Update person data
+ * Update person data (all)
  * @param node_id node ID the data coming from
  * @param person_records JSON of vote records
  */
@@ -414,6 +414,12 @@ exports.performPersonDataUpdate = function(node_id, person_records) {
 
 };
 
+/**
+ * Update person data (specific key)
+ * @param nim node ID the data coming from
+ * @param key key to change
+ * @param data new data for key
+ */
 exports.updatePersonData = function (nim,key,data) {
     let stmt;
 

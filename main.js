@@ -166,6 +166,8 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             console.log("Receive vote data");
             if(data.node_id!==Database.getConfig("node_id")) {
                 Database.performVoteDataUpdate(Database.getConfig("node_id"), data.vote_payload, data.last_signature);
+                Database.updatePersonData(data.voter_nim,"voted",1);
+                Database.updatePersonData(data.voter_nim,"last_queued",null);
             }
             ch.ack(msg);
         });
@@ -209,6 +211,7 @@ function castVote(argument){
         // Messaging.publish(Messaging.getQueueName(Messaging.EX_VOTE_CASTED), JSON.stringify(voteCastedData));
 
         Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload'], voteCastedData['last_signature']);
+        Database.updatePersonData(voterData.voter_nim,"voted",1);
 
         VoteSys.commitVotePayload();
 
