@@ -6,8 +6,6 @@
 
 const uuid4 = require('uuid4');
 const crypto = require('crypto');
-const hash = crypto.createHash('sha256');
-var hmac;
 
 var machineKey;
 var latestHash;
@@ -22,7 +20,6 @@ var tempLatestHash;
 exports.init = function(latest_hash, machine_key) {
     latestHash = latest_hash;
     machineKey = machine_key;
-    hmac = crypto.createHmac('sha256', machine_key);
 };
 
 /**
@@ -45,7 +42,7 @@ exports.createVotePayload = function(data) {
     };
 
     let vpayloadstr = JSON.stringify(vpayload);
-    let vpayloadhash = hash.update(vpayloadstr).digest('hex');
+    let vpayloadhash = crypto.createHash('sha256').update(vpayloadstr).digest('hex');
     let objret = {};
     objret.votePayload = {
         vote_data: vpayloadstr,
@@ -55,7 +52,7 @@ exports.createVotePayload = function(data) {
 
     objret.lastHashPayload = {
         last_hash: vpayloadhash,
-        last_hash_hmac: hmac.update(vpayloadhash).digest('hex')
+        last_hash_hmac: crypto.createHmac('sha256', machineKey).update(vpayloadhash).digest('hex')
     };
 
     tempLatestHash = vpayloadhash;
