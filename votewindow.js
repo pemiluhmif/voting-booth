@@ -99,9 +99,9 @@ function castVote(vote_type, candidate_no) {
             win.loadURL("http://localhost:7000/vote/" + vtypes[i]);
         } else {
             // Cast vote
-            // TODO cast vote
             voteOngoing = false;
             clearTimeout(timeoutTimer);
+            clearTimeout(warningTimer);
             finalizeVote(vote_data);
 
             win.loadURL("http://localhost:7000/finished");
@@ -119,17 +119,10 @@ function castVote(vote_type, candidate_no) {
  * @returns true if succeed
  */
 function finalizeVote(data){
-
     try {
-        /*let data = {};
-        argument.forEach((item)=>{
-            data[item.type] = item.candidate_no;
-        });*/
-
         let objret = VoteSys.createVotePayload(data);
 
         let votePayload = objret['votePayload'];
-        let parsedVoteData = JSON.parse(votePayload['vote_data']);
         let sigData = objret['lastHashPayload'];
 
         let nodeId = database.getConfig("node_id");
@@ -139,9 +132,9 @@ function finalizeVote(data){
             "request_id": voterData.request_id,
             "voter_nim": voterData.voter_nim,
             "vote_payload": {
-                "previous_signature": parsedVoteData['previous_hash'],
+                "previous_signature": votePayload['previous_hash'],
                 "node_id": nodeId,
-                "vote_id": parsedVoteData['vote_id'],
+                "vote_id": votePayload['vote_id'],
                 "voted_candidate": votePayload['vote_data'],
                 "signature": votePayload['current_hash']
             },

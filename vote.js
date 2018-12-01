@@ -47,7 +47,8 @@ exports.createVotePayload = function(data) {
     objret.votePayload = {
         vote_data: vpayloadstr,
         previous_hash: latestHash,
-        current_hash: vpayloadhash
+        current_hash: vpayloadhash,
+        vote_id: vote_id
     };
 
     objret.lastHashPayload = {
