@@ -10,4 +10,7 @@ module.exports = (app) => {
             res.render('voter.ejs', {data});
         })
     });
+    app.get('/thank', (req, res) => {
+        res.render('thank.ejs');
+    })
 }

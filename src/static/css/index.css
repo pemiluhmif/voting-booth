@@ -37,3 +37,9 @@ body {
 .confirm-choose .level-item > button {
     width: 85%;
 }
+
+.timer {
+    width: 150px;
+    left: 30px;
+    position: absolute;
+}

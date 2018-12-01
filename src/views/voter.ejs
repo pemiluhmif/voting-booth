@@ -3,6 +3,7 @@
     <% include partials/head %>
     <body>
         <div class="container">
+            <div class="timer" data-timer="60"></div>
             <div style="text-align: center">
                 <h1 class="title" style="margin-bottom: 30px; padding-top: 3vh">Klik <%- data.name %> Pilihanmu!</h1>
             </div>
@@ -15,10 +16,13 @@
         <% include partials/footer %>
     </body>
     <script>
+        $(".timer").TimeCircles({time: { Days: { show: false }, Hours: { show: false }, Minutes: { show: false} }});
         let choose = (modalId) => {
+            $(".timer").TimeCircles().stop();
             document.querySelector(`#${modalId}`).style.display = 'block';
         }
         let closeModal = (modalId) => {
+            $(".timer").TimeCircles().start();
             document.querySelector(`#${modalId}`).style.display = 'none';
         }
     </script>
