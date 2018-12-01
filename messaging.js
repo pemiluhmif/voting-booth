@@ -117,9 +117,10 @@ function assertExchanges(ch) {
         // In voting booth, build a shared Queue
         ch.assertQueue(EX_VOTER_QUEUED_SHARED, {durable: true, exclusive: false}, function (err, q) {
             ch.bindQueue(q.queue, EX_VOTER_QUEUED);
+            ch.prefetch(1);
             // No auto acknowledge, since voting can take a long time (machine wise)
             ch.consume(q.queue, function(msg) {
-                //console.log(" [x] %s", msg.content.toString());
+                // console.log(" [x] %s", msg.content.toString());
                 let callback = listeners[EX_VOTER_QUEUED_SHARED];
                 if(callback !== undefined)
                     callback(msg, ch);

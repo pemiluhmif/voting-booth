@@ -1,26 +1,24 @@
-<div class="card profile" id="card-<%- name.nim %>" onclick="choose('notif-<%- name.nim %>')">
+<div class="card profile" id="card-<%- name.nim %>" onclick="choose('notif-<%- name.NIM %>')">
     <div class="card-image">
         <figure class="image is-4by5">
-            <img src=<%- name.photo %> alt="nama">
+            <img src=<%- name.image_file_path %> alt="nama">
         </figure>
     </div>
     <div class="card-content">
         <p class="title is-4"><%- name.name %></p>
-        <p class="subtitle is-5"><%- name.nim %></p>
+        <p class="subtitle is-5"><%- name.NIM %></p>
     </div>
 </div>
 
-<div class="confirm-choose" id="notif-<%- name.nim %>">
+<div class="confirm-choose" id="notif-<%- name.NIM %>">
     <div class="notification">
         <p class="title is-4">Sudah yakin memilih <%- name.name %>?</p>
         <div class="level">
             <div class="level-item">
-                <a href="/thank">
-                    <button class="button is-link">Ya, saya yakin</button>
-                </a>
+                <button class="button is-link" onclick="vote('<%- name.voting_type %>','<%- name.candidate_no %>','<%- name.NIM %>')">Ya, saya yakin</button>
             </div>
             <div class="level-item">
-                <button class="button is-danger" onclick="closeModal('notif-<%- name.nim %>')">Tidak, ganti pilihan</button>
+                <button class="button is-danger" onclick="closeModal('notif-<%- name.NIM %>')">Tidak, ganti pilihan</button>
             </div>
         </div>
     </div>

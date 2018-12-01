@@ -4,10 +4,11 @@
   "description": "Pemilu HMIF 2019 voting booth",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . -i --config=sample_manifest.json --auth=sample_auth.json",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pack": "build --dir",
-    "dist": "build"
+    "dist": "build",
+    "postinstall": "install-app-deps"
   },
   "author": "IT Pemilu HMIF 2019",
   "repository": {
@@ -51,11 +52,13 @@
   },
   "dependencies": {
     "amqplib": "^0.5.2",
-    "uuid4": "^1.1.4",
     "axios": "^0.18.0",
+    "better-sqlite3": "^5.0.1",
     "bulma": "^0.7.2",
     "ejs": "^2.6.1",
     "electron-reload": "^1.3.0",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "uuid4": "^1.1.4",
+    "yargs": "^12.0.5"
   }
 }

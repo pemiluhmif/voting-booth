@@ -1,0 +1,45 @@
+{
+  "node_id": "TPS02",
+  "origin_hash": "abcdefghijklmn",
+  "voting_name": "Pemilihan Umum HMIF 2019",
+  "logo_url": "LOGO_URL",
+  "background_url": "BACKGROUND_URL",
+  "color": {
+    "primary": "#eeeeee",
+    "accent": "#eeeeee",
+    "text_dark": "#000000",
+    "text_light": "#ffffff"
+  },
+  "voting_types": [
+    {
+      "type": "kahim",
+      "title": "Ketua himpunan"
+    }
+  ],
+  "voters": [
+    {
+      "name": "Joni",
+      "nim": "13517999"
+    },
+    {
+      "name": "Toni",
+      "nim": "18217999"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_no": "1",
+      "name": "Budi",
+      "nim":13516999,
+      "image_url": "IMAGE_URL1",
+      "voting_type": "kahim"
+    },
+    {
+      "candidate_no": "2",
+      "name": "Badu",
+      "nim":18217999,
+      "image_url": "IMAGE_URL2",
+      "voting_type": "kahim"
+    }
+  ]
+}
