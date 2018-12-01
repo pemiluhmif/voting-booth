@@ -3,8 +3,8 @@
     <% include partials/head %>
     <body>
         <div class="container">
-            <div style="text-align: center">
-                <h1 class="title" style="margin-bottom: 30px; padding-top: 3vh">Klik <%- data.title %> Pilihanmu!</h1>
+            <div style="text-align: center; padding-top: 10vh">
+                <h1 class="title" style="margin-bottom: 30px; padding-top: 3vh; color: #0cafad">Klik <%- data.title %> Pilihanmu!</h1>
             </div>
             <div class="columns" style="justify-content:center">
                 <% data.candidates.forEach(name => { %>
@@ -15,10 +15,10 @@
         <% include partials/footer %>
     </body>
     <script>
-        $(".timer").TimeCircles({time: { Days: { show: false }, Hours: { show: false }, Minutes: { show: false} }});
+        // $(".timer").TimeCircles({time: { Days: { show: false }, Hours: { show: false }, Minutes: { show: false} }});
         const ipcRenderer = require('electron').ipcRenderer;
 
-        let choose = (modalId) => {
+        let openModal = (modalId) => {
             document.querySelector(`#${modalId}`).style.display = 'block';
         }
         let closeModal = (modalId) => {
