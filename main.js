@@ -23,9 +23,10 @@ function createWindow () {
         height: 600,
         resizable: true
     });
+    win.setFullScreen(true);
 
     // Load main site
-    win.loadURL('http://localhost:7000/');
+    win.loadURL('http://localhost:7000/ins');
     win.focus();
 
     // Emitted when the window is closed.
