@@ -169,12 +169,19 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
         // Keeps track of queued voter
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED, (msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
-            console.log("Receive vote data");
             Database.updatePersonData(data.voter_nim, "last_queued", data.timestamp);
         });
-        Messaging.setMessageListener(Messaging.EX_REQUEST_DATA_BROADCAST, (msg,ch)=>{
-            console.log("request data");
+
+        Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
+            let data = JSON.parse(msg.content.toString());
+
+            if(data.persons !== undefined){
+                data.persons.forEach((item)=>{
+                    Database.performPersonDataUpdate(data.node_id,item);
+                })
+            }
         });
+
         Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
 
@@ -199,19 +206,28 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             let lastSigs = Database.getLastSignatures();
             console.log(votes);
             console.log(lastSigs);
-            let replyData = {
+            let replyVote = {
                 "node_id": Database.getConfig("node_id"),
                 "votes": votes,
                 "last_hashes": lastSigs
             };
-            Messaging.sendToQueue(Messaging.EX_VOTE_DATA_REPLY+":"+data.node_id,JSON.stringify(replyData));
+            Messaging.sendToQueue(Messaging.EX_VOTE_DATA_REPLY+":"+data.node_id,JSON.stringify(replyVote));
+
+            let persons = Database.getVoters();
+            console.log(persons);
+            let replyPerson = {
+                "node_id": Database.getConfig("node_id"),
+                "persons": persons
+            };
+
+            Messaging.sendToQueue(Messaging.EX_PERSON_DATA_REPLY+":"+data.node_id,JSON.stringify(replyPerson));
         });
 
 
         let data = {
             "node_id" : Database.getConfig("node_id")
         };
-        console.log("bc");
+
         Messaging.publish(Messaging.EX_REQUEST_DATA_BROADCAST,'',JSON.stringify(data),null);
 
         createWindow();

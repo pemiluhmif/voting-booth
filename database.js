@@ -170,6 +170,18 @@ exports.getVoter = function (nim) {
     }
 };
 
+exports.getVoters = function () {
+    if(db!=null){
+        let stmt  = db.prepare("SElECT * FROM voters");
+        let data = stmt.all();
+        if(data===undefined){
+            return null;
+        }else {
+            return data;
+        }
+    }
+};
+
 exports.getVoteRecords = function () {
     if(db!=null){
         let stmt  = db.prepare("SElECT * FROM vote_record");
