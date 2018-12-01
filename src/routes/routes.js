@@ -7,7 +7,7 @@ module.exports = (app) => {
     });
 
     app.get('/ins', (req, res) => {
-        res.render('instructions.ejs');
+        res.render('instructions.ejs', {"voter_name": req.query.name, "voter_nim": req.query.nim});
     });
 
     app.get('/finished', (req, res) => {

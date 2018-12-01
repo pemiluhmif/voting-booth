@@ -10,8 +10,6 @@ let win;
 
 let serv = null;
 
-var voterData = null;
-
 /**
  *  Create new window, load view, and set up ipc
  */
@@ -145,17 +143,8 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                     console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                     Messaging.sendToQueue(data.reply, JSON.stringify({node_id: Database.getConfig("node_id"), request_id: data.request_id}));
 
-                    //win.webContents.send("readyToVote",data.voter_nim);
                     VoteWindow.begin(data, msg, ch);
-
-                    voterData = data;
-                    /*ackMsg = msg;
-                    ackCh = ch;
-                    interactTimer = setTimeout(()=>{
-                        win.webContents.send("voterUnresponsive");
-                        ackCh.ack(ackMsg);
-                    }, voterTimeout);*/
-                } catch (e) {
+                    } catch (e) {
                     console.error(e.message);
                     ch.nack(msg);
                 }

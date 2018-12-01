@@ -45,7 +45,7 @@ exports.begin = function(voter_data, ack_msg, ack_ch) {
 
     voteOngoing = true;
 
-    win.loadURL("http://localhost:7000/ins");
+    win.loadURL("http://localhost:7000/ins?name=" + voter_data.voter_name + "&nim=" + voter_data.voter_nim);
 
     timeoutTimer = setTimeout(function() {
         cancelVotingProcess();
