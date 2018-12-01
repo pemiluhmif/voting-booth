@@ -204,15 +204,13 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             console.log("rec");
             let data = JSON.parse(msg.content.toString());
 
-            if(data.vote !== undefined){
-                console.log("insert 1");
-                data.vote.forEach((item)=>{
+            if(data.votes !== undefined){
+                data.votes.forEach((item)=>{
                     Database.performVoteDataUpdate(data.node_id,item);
                 });
             }
 
             if(data.last_hashes!==undefined){
-                console.log("insert 2");
                 data.last_hashes.forEach((item)=>{
                     Database.performSigDataUpdate(data.node_id,item);
                 });
@@ -271,8 +269,6 @@ function castVote(argument){
         };
 
         Messaging.publish(Messaging.EX_VOTE_CASTED, '', JSON.stringify(voteCastedData), null);
-
-        // Messaging.publish(Messaging.getQueueName(Messaging.EX_VOTE_CASTED), JSON.stringify(voteCastedData));
 
         Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload']);
         Database.performSigDataUpdate(Database.getConfig("node_id"), voteCastedData['last_signature']);

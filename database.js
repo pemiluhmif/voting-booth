@@ -336,18 +336,7 @@ exports.performVoteDataUpdate = function(node_id, vote_records) {
     let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
     let stmtUpdate = db.prepare("UPDATE vote_record SET node_id = ?, previous_signature = ?, voted_candidate = ?, signature = ? WHERE vote_id = ?");
 
-
-    // let stmtUpdateSig = db.prepare("UPDATE last_signature VALUES (?,?,?)");
-
-
-    db.exec(`CREATE TABLE IF NOT EXISTS last_signature (
-            node_id TEXT NOT NULL,
-            last_signature BLOB NOT NULL,
-            last_signature_signature BLOB NOT NULL
-            );
-         `);
-
-    let transaction = db.transaction((dataInsert,sigInsert)=>{
+    let transaction = db.transaction((dataInsert)=>{
         let voteData = stmtCount.get(dataInsert['vote_id']);
         if(voteData===undefined){
             stmtInsert.run(dataInsert['vote_id'],
