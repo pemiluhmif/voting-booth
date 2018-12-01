@@ -293,6 +293,9 @@ exports.loadInitManifest = function(initDataRaw) {
  */
 exports.loadAuthorizationManifest= function(JSONdata){
     let JSONcontent = JSON.parse(JSONdata);
+    if(nodeId==null){
+        nodeId = this.getConfig("node_id");
+    }
     if(nodeId!==JSONcontent["node_id"]){
         console.error(`Node id doesn't match`);
         return {
