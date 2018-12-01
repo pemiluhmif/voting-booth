@@ -15,6 +15,8 @@ var ackMsg = null;
 var ackCh = null;
 var interactTimer = null;
 
+var nodeLoaded = false;
+
 const voterTimeout = 10000;
 
 /**
@@ -120,13 +122,13 @@ app.on('ready', ()=>{
             process.exit(1);
         }
 
-        createWindow();
-
     }else{
         dialog.showErrorBox("Error on init",status["msg"]);
     }
 
 });
+
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -184,12 +186,45 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
             let data = JSON.parse(msg.content.toString());
             console.log("Receive vote data");
             if(data.node_id!==Database.getConfig("node_id")) {
-                Database.performVoteDataUpdate(Database.getConfig("node_id"), data.vote_payload, data.last_signature);
+                Database.performVoteDataUpdate(data.node_id, data.vote_payload);
+                Database.performSigDataUpdate(data.node_id, data.last_signature)
                 Database.updatePersonData(data.voter_nim,"voted",1);
                 Database.updatePersonData(data.voter_nim,"last_queued",null);
             }
             ch.ack(msg);
         });
+        Messaging.setMessageListener(Messaging.EX_REQUEST_DATA_BROADCAST, (msg,ch)=>{
+            console.log("request data");
+        });
+        Messaging.setMessageListener(Messaging.EX_VOTE_DATA_REPLY,(msg,ch)=>{
+            console.log("rec");
+            let data = JSON.parse(msg.content.toString());
+
+            if(data.vote !== undefined){
+                console.log("insert 1");
+                data.vote.forEach((item)=>{
+                    Database.performVoteDataUpdate(data.node_id,item);
+                });
+            }
+
+            if(data.last_hashes!==undefined){
+                console.log("insert 2");
+                data.last_hashes.forEach((item)=>{
+                    Database.performSigDataUpdate(data.node_id,item);
+                });
+            }
+
+            console.log(data);
+        });
+
+
+        let data = {
+            "node_id" : Database.getConfig("node_id")
+        };
+        console.log("bc");
+        Messaging.publish(Messaging.EX_REQUEST_DATA_BROADCAST,'',JSON.stringify(data),null);
+
+        createWindow();
     });
 }
 
@@ -208,7 +243,7 @@ function castVote(argument){
         let objret = VoteSys.createVotePayload(data);
 
         let voteData = objret['votePayload'];
-        voteData['vote_data'] = JSON.parse(voteData['vote_data']);
+        // voteData['vote_data'] = JSON.parse(voteData['vote_data']);
         let sigData = objret['lastHashPayload'];
 
         let nodeId = Database.getConfig("node_id");
@@ -221,7 +256,7 @@ function castVote(argument){
                 "previous_signature": voteData['previous_hash'],
                 "node_id": nodeId,
                 "vote_id": voteData['vote_data']['vote_id'],
-                "voted_candidate": JSON.stringify(voteData['vote_data']['vote_data']),
+                "voted_candidate": voteData['vote_data'],
                 "signature": voteData['current_hash']
             },
             "last_signature": {
@@ -235,7 +270,8 @@ function castVote(argument){
 
         // Messaging.publish(Messaging.getQueueName(Messaging.EX_VOTE_CASTED), JSON.stringify(voteCastedData));
 
-        Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload'], voteCastedData['last_signature']);
+        Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload']);
+        Database.performSigDataUpdate(Database.getConfig("node_id"), voteCastedData['last_signature']);
         Database.updatePersonData(voterData.voter_nim,"voted",1);
 
         VoteSys.commitVotePayload();

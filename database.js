@@ -327,7 +327,7 @@ exports.authorize = function(machine_key) {
  * @param vote_records JSON of vote records
  * @param signature_records JSON of signature records
  */
-exports.performVoteDataUpdate = function(node_id, vote_records, signature_records) {
+exports.performVoteDataUpdate = function(node_id, vote_records) {
     /* Data coming in from this method belongs to an individual node, one at a time.
      * If a record of the same vote_id exists, prioritize the data coming from the node of which the data is generated.
      */
@@ -336,7 +336,7 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
     let stmtInsert = db.prepare("INSERT INTO vote_record VALUES (?,?,?,?,?)");
     let stmtUpdate = db.prepare("UPDATE vote_record SET node_id = ?, previous_signature = ?, voted_candidate = ?, signature = ? WHERE vote_id = ?");
 
-    let stmtUpdateSig = db.prepare(`INSERT OR REPLACE INTO last_signature (node_id, last_signature, last_signature_signature) VALUES (  ?, ?, ? );`);
+
     // let stmtUpdateSig = db.prepare("UPDATE last_signature VALUES (?,?,?)");
 
 
@@ -355,10 +355,6 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
                 dataInsert['previous_signature'],
                 dataInsert['voted_candidate'],
                 dataInsert['signature']);
-            stmtUpdateSig.run(sigInsert['node_id'],
-                sigInsert['last_signature'],
-                sigInsert['signature']);
-
         }else{
             if(node_id === dataInsert['node_id']){
                 stmtUpdate.run(dataInsert['node_id'],
@@ -366,14 +362,24 @@ exports.performVoteDataUpdate = function(node_id, vote_records, signature_record
                     dataInsert['voted_candidate'],
                     dataInsert['signature'],
                     dataInsert['vote_id']);
-                stmtUpdateSig.run(sigInsert['node_id'],
-                    sigInsert['last_signature'],
-                    sigInsert['signature']);
             }
         }
     });
 
-    transaction(vote_records,signature_records);
+    transaction(vote_records);
+};
+
+exports.performSigDataUpdate = function(node_id,sigData){
+    let stmtUpdateSig = db.prepare(`INSERT OR REPLACE INTO last_signature (node_id, last_signature, last_signature_signature) VALUES (  ?, ?, ? );`);
+
+    let transaction = db.transaction((sigInsert)=>{
+        stmtUpdateSig.run(sigInsert['node_id'],
+            sigInsert['last_signature'],
+            sigInsert['signature']);
+    });
+
+    transaction(sigData);
+
 };
 
 /**
