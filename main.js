@@ -5,8 +5,6 @@ const yargs = require('yargs');
 const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let win;
 
 let serv = null;
@@ -19,10 +17,14 @@ var interactTimer = null;
 
 const voterTimeout = 10000;
 
+/**
+ *  Create new window, load view, and set up ipc
+ */
 function createWindow () {
-    // Create the browser window.
+    // Load express
     serv = require('./src/app');
 
+    // Create window
     win = new BrowserWindow({
         width: 1024,
         height: 600,
@@ -53,9 +55,10 @@ function createWindow () {
 
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+/**
+ *  This method will be called when Electron has finished
+ *  initialization. Set up node and database
+ */
 app.on('ready', ()=>{
     let argv = yargs.usage("Usage: $0 [options]")
         .example("$0 -i --setting=myManifest.json --auth=myAuth.json --db=myDb.db")
@@ -129,7 +132,11 @@ app.on('activate', () => {
 
 
 /**
- * TODO Enable node (invoked after loading Authorization Mainfest)
+ *  Enable node
+ *  Setup message listener and voteSys
+ *  @param nodeId Node id of this node
+ *  @param machineKey machine key
+ *  @param amqpUrl URL of rabbbitmq server
  */
 function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     VoteSys.init(Database.getLastSignature(),machineKey);
@@ -174,6 +181,12 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     });
 }
 
+/**
+ * Cast vote
+ * Update the database and publish vote casted message
+ * @param argument voting JSON object {"type": <type>,"candidate_no":<number>}
+ * @returns true if succeed
+ */
 function castVote(argument){
 
     try {
