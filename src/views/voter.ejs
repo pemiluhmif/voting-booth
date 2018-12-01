@@ -25,8 +25,7 @@
         }
         let vote = (type,candidate_no,nim) =>{
             console.log("Vote "+candidate_no);
-            ipcRenderer.send("voted", {"type":type,
-                "candidate_no":candidate_no});
+            ipcRenderer.send("voted", {"vote_type":type, "candidate_no":candidate_no});
             closeModal('notif-'+nim);
         }
 
@@ -45,11 +44,11 @@
 
         })
 
-        ipcRenderer.on('readyToVote',function (event,nim) {
+        /*ipcRenderer.on('readyToVote',function (event,nim) {
             // TODO UI - welcome voter
             alert("welcome"+nim);
             event.sender.send('voter-interact');
 
-        })
+        })*/
     </script>
 </html>

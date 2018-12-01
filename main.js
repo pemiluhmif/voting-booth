@@ -4,6 +4,7 @@ const Database = require('./database');
 const yargs = require('yargs');
 const ipcMain = require('electron').ipcMain;
 const VoteSys = require('./vote');
+const VoteWindow = require('./votewindow');
 
 let win;
 
@@ -11,8 +12,6 @@ let serv = null;
 
 var voterData = null;
 
-var ackMsg = null;
-var ackCh = null;
 var interactTimer = null;
 
 const voterTimeout = 10000;
@@ -40,7 +39,9 @@ function createWindow () {
         win = null
     });
 
-    ipcMain.on('voted',function (event,arg) {
+    VoteWindow.init(win);
+
+    /*ipcMain.on('voted',function (event,arg) {
         event.sender.send("castVoteReply",castVote(arg));
         ackCh.ack(ackMsg);
     });
@@ -48,7 +49,7 @@ function createWindow () {
     ipcMain.on('voter-interact',function(event, arg){
         console.log("delete timer");
         clearTimeout(interactTimer);
-    });
+    });*/
 
 
 }
@@ -160,15 +161,16 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
                     console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
                     Messaging.sendToQueue(data.reply, JSON.stringify({node_id: Database.getConfig("node_id"), request_id: data.request_id}));
 
-                    win.webContents.send("readyToVote",data.voter_nim);
+                    //win.webContents.send("readyToVote",data.voter_nim);
+                    VoteWindow.begin(data, msg, ch);
 
                     voterData = data;
-                    ackMsg = msg;
+                    /*ackMsg = msg;
                     ackCh = ch;
                     interactTimer = setTimeout(()=>{
                         win.webContents.send("voterUnresponsive");
                         ackCh.ack(ackMsg);
-                    },voterTimeout);
+                    }, voterTimeout);*/
                 } catch (e) {
                     console.error(e.message);
                     ch.nack(msg);
@@ -182,9 +184,9 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
         Messaging.setMessageListener(Messaging.EX_VOTE_CASTED, (msg,ch)=>{
             let data = JSON.parse(msg.content.toString());
             console.log("Receive vote data");
-            if(data.node_id!==Database.getConfig("node_id")) {
+            if(data.node_id !== Database.getConfig("node_id")) {
                 Database.performVoteDataUpdate(data.node_id, data.vote_payload);
-                Database.performSigDataUpdate(data.node_id, data.last_signature)
+                Database.performSigDataUpdate(data.node_id, data.last_signature);
                 Database.updatePersonData(data.voter_nim,"voted",1);
                 Database.updatePersonData(data.voter_nim,"last_queued",null);
             }
@@ -241,61 +243,4 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
 
         createWindow();
     });
-}
-
-/**
- * Cast vote
- * Update the database and publish vote casted message
- * @param argument voting JSON object {"type": <type>,"candidate_no":<number>}
- * @returns true if succeed
- */
-function castVote(argument){
-
-    try {
-        let data = {};
-        argument.forEach((item)=>{
-            data[item.type] = item.candidate_no;
-        });
-
-
-        let objret = VoteSys.createVotePayload(data);
-
-        let voteData = objret['votePayload'];
-        // voteData['vote_data'] = JSON.parse(voteData['vote_data']);
-        let sigData = objret['lastHashPayload'];
-
-        let nodeId = Database.getConfig("node_id");
-
-        let voteCastedData = {
-            "node_id": nodeId,
-            "request_id": voterData.request_id,
-            "voter_nim": voterData.voter_nim,
-            "vote_payload": {
-                "previous_signature": voteData['previous_hash'],
-                "node_id": nodeId,
-                "vote_id": voteData['vote_data']['vote_id'],
-                "voted_candidate": voteData['vote_data'],
-                "signature": voteData['current_hash']
-            },
-            "last_signature": {
-                "node_id": nodeId,
-                "last_signature": sigData['last_hash'],
-                "signature": sigData['last_hash_hmac']
-            }
-        };
-
-        Messaging.publish(Messaging.EX_VOTE_CASTED, '', JSON.stringify(voteCastedData), null);
-
-        Database.performVoteDataUpdate(Database.getConfig("node_id"), voteCastedData['vote_payload']);
-        Database.performSigDataUpdate(Database.getConfig("node_id"), voteCastedData['last_signature']);
-        Database.updatePersonData(voterData.voter_nim,"voted",1);
-
-        VoteSys.commitVotePayload();
-
-        return true;
-
-    } catch (e) {
-        console.error(e.message);
-        return false;
-    }
 }
