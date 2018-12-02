@@ -485,11 +485,11 @@ exports.updatePersonData = function (nim,key,data) {
 
     switch (key) {
         case "last_queued":
-            stmt = db.prepare('UPDATE voters SET last_queued = ? WHERE nim = ?');
+            stmt = db.prepare('UPDATE voters SET last_queued = ?, last_modified = CURRENT_TIMESTAMP WHERE nim = ?');
             stmt.run(data,nim);
             break;
         case "voted":
-            stmt = db.prepare('UPDATE voters SET voted = ? WHERE nim = ?');
+            stmt = db.prepare('UPDATE voters SET voted = ?, last_modified = CURRENT_TIMESTAMP WHERE nim = ?');
             stmt.run(data,nim);
             break;
     }
