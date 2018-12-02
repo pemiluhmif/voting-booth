@@ -64,7 +64,9 @@ app.on('ready', ()=>{
 
     if(status["status"]){
         // Initial config if specified OR database is empty
-        if(argv.initial || !Database.isTableSetup()) {
+        if(argv.initial || !(Database.hasTable("config") && Database.hasTable("voters") &&
+            Database.hasTable("voting_types") && Database.hasTable("candidates"))) {
+
             if(argv.config !== undefined) {
                 // If config is specified in argument, use that
                 console.log("Loading manifest from file..");
@@ -107,7 +109,7 @@ app.on('ready', ()=>{
                 dialog.showErrorBox("Error on JSON (auth) load",ret['msg']);
                 process.exit(1);
             }
-            if(argv.initial || !Database.isTableSetup()){
+            if(argv.initial || !(Database.hasTable("last_signature") && Database.hasTable("vote_record"))){
                 Database.setupTable();
             }
         } catch (e) {
