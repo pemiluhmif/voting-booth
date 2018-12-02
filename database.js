@@ -279,8 +279,6 @@ exports.loadInitManifest = function(initDataRaw) {
 
         let initData = JSON.parse(initDataRaw);
 
-        console.log(initData);
-
         let stmt = db.prepare("INSERT INTO config VALUES (?,?)");
 
         // Node id
@@ -496,10 +494,12 @@ exports.updatePersonData = function (nim,key,data) {
 };
 
 /**
- * Check if a table is setup
+ * Check if db has table
+ * @param tblName table name
+ * @returns {boolean} is table exists
  */
-exports.isTableSetup = function() {
+exports.hasTable = function(tblName) {
     let stmtCount = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
 
-    return stmtCount.get("config") !== undefined && stmtCount.get("voters") !== undefined && stmtCount.get("voting_types") !== undefined && stmtCount.get("candidates") !== undefined
+    return stmtCount.get(tblName) !== undefined;
 };

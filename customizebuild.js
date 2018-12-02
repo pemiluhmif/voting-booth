@@ -29,18 +29,18 @@ inquirer.prompt(questions).then(answers => {
     // Download logo
     let logoUrl = manifest.logo_url;
     let logoFilename = saveFile("logo", logoUrl);
-    manifest.logo_url = "assets/" + logoFilename;
+    manifest.logo_url = "/assets/" + logoFilename;
 
     // Download background
     let backgroundUrl = manifest.background_url;
 
     let bgFilename = saveFile("bg", backgroundUrl);
-    manifest.background_url = "assets/" + bgFilename;
+    manifest.background_url = "/assets/" + bgFilename;
 
     // For each candidate, download image
     for(let i = 0; i < manifest.candidates.length; i++) {
         let cpfilename = saveFile("candidate_" + i, manifest.candidates[i].image_url);
-        manifest.candidates[i].image_url = "assets/" + cpfilename;
+        manifest.candidates[i].image_url = "/assets/" + cpfilename;
     }
 
     // Write file
