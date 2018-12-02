@@ -136,7 +136,7 @@ function finalizeVote(data){
                 "previous_signature": votePayload['previous_hash'],
                 "node_id": nodeId,
                 "vote_id": votePayload['vote_id'],
-                "voted_candidate": votePayload['vote_data'],
+                "voted_candidate": votePayload['vote_data']['vote_data'],
                 "signature": votePayload['current_hash']
             },
             "last_signature": {
