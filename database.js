@@ -494,3 +494,12 @@ exports.updatePersonData = function (nim,key,data) {
             break;
     }
 };
+
+/**
+ * Check if a table is setup
+ */
+exports.isTableSetup = function() {
+    let stmtCount = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
+
+    return stmtCount.get("config") !== undefined && stmtCount.get("voters") !== undefined && stmtCount.get("voting_types") !== undefined && stmtCount.get("candidates") !== undefined
+};
