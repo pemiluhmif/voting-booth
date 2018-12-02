@@ -37,7 +37,9 @@ body {
     width: 85%;
     font-size: 1.3rem;
 }
-figure.image {
+
+figure.image{
     background-size: cover;
-    background-position: center;
+    background-position-x: center;
+    background-position-y: center;
 }
