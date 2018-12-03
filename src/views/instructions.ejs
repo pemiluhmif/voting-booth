@@ -2,7 +2,7 @@
 <html lang="en">
     <% include partials/head %>
     <body>
-        <div class="container" align="center" id="instruction" style="margin-top: 10vh">
+        <div class="container" align="center" id="instruction" style="margin-top: 10vh; margin-bottom: 100px;">
             <h2 class="title is-3">Halo, <%- voter_name %> (<%- voter_nim %>)</h2>
             <br>
             <h1 style="color: #179ed8;" class="title is-1">Instruksi Pemilihan:</h1>
@@ -50,7 +50,9 @@
                     </div>
                 </div>
             </div>
-            <button class="button is-info is-medium" id="proceed-btn" onclick="proceed()">Saya Mengerti</button>
+            <div style="padding: 16px; background: #ffffff; border-top: 1px solid #cccccc; position: fixed; width: 100%; bottom: 0; left: 0;">
+                <button class="button is-info is-medium" id="proceed-btn" onclick="proceed()">Saya Mengerti</button>
+            </div>
         </div>
         <% include partials/footer %>
     </body>
