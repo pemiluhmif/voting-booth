@@ -78,6 +78,7 @@ function cancelVotingProcess() {
     // Stop voting process
     voteOngoing = false;
     win.loadURL("http://localhost:7000/");
+    acceptNextVote();
 }
 
 function castVote(vote_type, candidate_no) {
@@ -159,7 +160,7 @@ function acceptNextVote() {
         let voter_data = queue.shift();
 
         Messaging.sendToQueue(voter_data.reply, JSON.stringify({
-            node_id: Database.getConfig("node_id"),
+            node_id: database.getConfig("node_id"),
             request_id: voter_data.request_id
         }));
 
