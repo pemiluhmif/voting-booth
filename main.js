@@ -168,18 +168,18 @@ function enableNode(nodeId, originHash, machineKey, amqpUrl) {
     Messaging.connect(amqpUrl, function() {
         Messaging.setMessageListener(Messaging.EX_VOTER_QUEUED_SHARED, function(msg, ch) {
             try {
-                try {
-                    let data = JSON.parse(msg.content.toString());
-                    console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
-                    Messaging.sendToQueue(data.reply, JSON.stringify({node_id: Database.getConfig("node_id"), request_id: data.request_id}));
+                let data = JSON.parse(msg.content.toString());
+                console.log("Vote request: " + data.voter_name + " (" + data.voter_nim + ")");
 
-                    VoteWindow.begin(data, msg, ch);
-                    } catch (e) {
-                    console.error(e.message);
-                    ch.nack(msg);
-                }
+                VoteWindow.receiveVoter(data);
+
+                // Directly acknowledge
+                ch.ack(msg);
             } catch (e) {
-                console.log(e);
+                console.error(e.message);
+
+                // TODO if possible, use nack to go to DLQ
+                ch.ack(msg);
             }
         });
 

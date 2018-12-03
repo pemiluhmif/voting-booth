@@ -14,7 +14,7 @@ var vote_data = {};
 var i;
 var voterData;
 var voteOngoing = false;
-var ackMsg, ackCh;
+var queue = [];
 
 exports.init = function(window) {
     win = window;
@@ -43,19 +43,12 @@ exports.init = function(window) {
     });
 };
 
-exports.begin = function(voter_data, ack_msg, ack_ch) {
-    i = 0;
-    vote_data = {};
-    voterData = voter_data;
+exports.receiveVoter = function(voter_data) {
+    queue.push(voter_data);
 
-    ackCh = ack_ch;
-    ackMsg = ack_msg;
-
-    voteOngoing = true;
-
-    win.loadURL("http://localhost:7000/ins?name=" + voter_data.voter_name + "&nim=" + voter_data.voter_nim);
-
-    resetInactivityTimer();
+    if(!voteOngoing) {
+        acceptNextVote();
+    }
 };
 
 function dismissInstructions() {
@@ -85,7 +78,6 @@ function cancelVotingProcess() {
     // Stop voting process
     voteOngoing = false;
     win.loadURL("http://localhost:7000/");
-    ackCh.ack(ackMsg);
 }
 
 function castVote(vote_type, candidate_no) {
@@ -107,8 +99,8 @@ function castVote(vote_type, candidate_no) {
 
             win.loadURL("http://localhost:7000/finished");
 
-            // Acknowledge so booth can receive new queues
-            ackCh.ack(ackMsg);
+            // Accept next vote in 10s
+            setTimeout(acceptNextVote, 10000);
         }
     }
 }
@@ -116,7 +108,7 @@ function castVote(vote_type, candidate_no) {
 /**
  * Finalize vote
  * Update the database and publish vote casted message
- * @param argument voting JSON object [{"type": <type>,"candidate_no":<number>}]
+ * @param data voting JSON object [{"type": <type>,"candidate_no":<number>}]
  * @returns true if succeed
  */
 function finalizeVote(data){
@@ -159,5 +151,26 @@ function finalizeVote(data){
     } catch (e) {
         console.error(e.message);
         return false;
+    }
+}
+
+function acceptNextVote() {
+    if(queue.length > 0) {
+        let voter_data = queue.shift();
+
+        Messaging.sendToQueue(voter_data.reply, JSON.stringify({
+            node_id: Database.getConfig("node_id"),
+            request_id: voter_data.request_id
+        }));
+
+        i = 0;
+        vote_data = {};
+        voterData = voter_data;
+
+        voteOngoing = true;
+
+        win.loadURL("http://localhost:7000/ins?name=" + voter_data.voter_name + "&nim=" + voter_data.voter_nim);
+
+        resetInactivityTimer();
     }
 }
